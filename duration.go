@@ -8,37 +8,36 @@ func GetBeatDuration(bpm float64) float64 {
 	return (MinuteUnit / bpm) * Millisecond
 }
 
-func getBaseTrackDuration(currentBpm float64) float64 {
-	return GetBeatDuration(currentBpm) * 4.0
+func getBaseTrackDuration(currentBPM float64) float64 {
+	return GetBeatDuration(currentBPM) * 4.0
 }
 
 // floating point hell
-func GetStopDuration(currentBpm float64, duration float64) float64 {
-	return getBaseTrackDuration(currentBpm) * (duration / 192.0)
+func GetStopDuration(currentBPM float64, duration float64) float64 {
+	return getBaseTrackDuration(currentBPM) * (duration / 192.0)
 }
 
-func GetTrackDurationGivenBPM(currentBpm float64, scalar float64) float64 {
-	return getBaseTrackDuration(currentBpm) * scalar
+func GetTrackDurationGivenBPM(currentBPM float64, measureScale float64) float64 {
+	return getBaseTrackDuration(currentBPM) * measureScale
 }
 
-// Gets the full length of the track. Different from GetTrackDurationGivenBPM, as this accounts for ALL tempo changes' offsets put together.
-func GetTotalTrackDuration(initialBPM float64, tempoChanges []LocalTempoChange, stopCommands []LocalStopCommand, scalar float64) float64 {
+// Gets the full length of the track. Different from GetTrackDurationGivenBPM, as this accounts for ALL BPM changes' offsets put together.
+func GetTotalTrackDuration(initialBPM float64, data LocalTrackData) float64 {
 	baseLength := 0.0
 
-	if len(tempoChanges) == 0 && len(stopCommands) == 0 {
-		return GetTrackDurationGivenBPM(initialBPM, scalar)
+	if len(data.BPMChanges) == 0 && len(data.Stops) == 0 {
+		return GetTrackDurationGivenBPM(initialBPM, data.MeasureScale)
 	}
 
-	for i, tc := range tempoChanges {
+	for i, change := range data.BPMChanges {
 		if i == 0 {
-			baseLength += GetTrackDurationGivenBPM(initialBPM, scalar) * tc.Position
+			baseLength += GetTrackDurationGivenBPM(initialBPM, data.MeasureScale) * change.Position
 		}
-		baseLength += GetTempoChangeOffset(i, scalar, tempoChanges)
+		baseLength += GetBPMChangeOffset(i, data)
 	}
-	if len(tempoChanges) == 0 {
-		baseLength += GetTrackDurationGivenBPM(initialBPM, scalar)
+	if len(data.BPMChanges) == 0 {
+		baseLength += GetTrackDurationGivenBPM(initialBPM, data.MeasureScale)
 	}
-	// No stop commands? Return the base length since the track length has already been found.
-	stopTime := GetStopOffset(initialBPM, 1.0, tempoChanges, stopCommands, false)
+	stopTime := GetStopOffset(initialBPM, 1.0, data)
 	return baseLength + stopTime
 }

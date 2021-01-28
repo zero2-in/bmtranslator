@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/base64"
-	"flag"
 	"fmt"
 	"github.com/fatih/color"
 	copy2 "github.com/otiai10/copy"
@@ -25,82 +24,66 @@ type ConversionStatus struct {
 }
 
 func main() {
-	color.HiBlue("...---=== BMTranslator %s ====---...", Version)
 	fmt.Print("\n")
+	color.HiBlue("  ___ __  __ _____ ")
+	color.HiBlue(" | _ )  \\/  |_   _|")
+	color.HiBlue(" | _ \\ |\\/| | | |  ")
+	color.HiBlue(" |___/_|  |_| |_|  (version %s)", Version)
+	fmt.Print("\n\n")
 
-	inputPtr := flag.String("i", "-", "Input folder containing BMS FOLDERS, NOT zip files!")
-	outputPtr := flag.String("o", "-", "Which folder you want the ending .qua files to be output to")
-	volPtr := flag.Int("vol", 100, "How loud the key sounds should be (0-100 is acceptable)")
-	fileTypePtr := flag.String("type", "quaver", "Which file type to use. (quaver | osu)")
-	hpDrainPtr := flag.Float64("hp", 8.5, "If file type is 'osu', the HP drain (0-10)")
-	overallDifficultyPtr := flag.Float64("od", 8.0, "If file type is 'osu', the overall difficulty (0-10)")
-	verbosePtr := flag.Bool("v", false, "If true, all logs will be shown.")
-	noBracketsPtr := flag.Bool("no-brackets", false, "If true, all brackets and their contents ([like this]) will be removed from the title of the map.")
+	conf := NewProgramConfig()
 
-	// TODO: Implement 5K+1 alignment feature someday
-	//specialNotePosPtr := flag.String("pos", "-", "If the style is 5K+1, where should the notes be aligned to? (left for 1-5, right for 3-7. Default is right.)")
-	flag.Parse()
-
-	if *inputPtr == "-" {
-		log.Fatal("Input directory must be provided")
+	if conf.Input == "-" {
+		log.Fatal("Input directory must be provided. Use the argument -i /path/to/input to define a directory with BMS folders.")
 	}
-	if *outputPtr == "-" {
-		log.Fatal("Output directory must be provided")
+	if conf.Output == "-" {
+		log.Fatal("Output directory must be provided. Use the argument -o /path/to/output to define where BMT will output files.")
 	}
 
-	if *verbosePtr {
-		color.HiBlack("* Input wanted: %s", *inputPtr)
-		color.HiBlack("* Output wanted: %s", *outputPtr)
-		color.HiBlack("* Volume: %d", *volPtr)
-		color.HiBlack("* Verbose: %t", *verbosePtr)
+	if conf.Verbose {
+		color.HiBlack("* Input wanted: %s", conf.Input)
+		color.HiBlack("* Output wanted: %s", conf.Output)
+		color.HiBlack("* Volume: %d", conf.Volume)
+		color.HiBlack("* Verbose: %t", conf.Verbose)
 	}
 
-	color.HiBlue("* Using file type \"%s\"", *fileTypePtr)
-
-	//if *specialNotePosPtr == "-" {
-	//	*specialNotePosPtr = "right"
-	//}
-	volInt := ClampInt(*volPtr, 100, 0)
-	hpDrain := ClampFloat(*hpDrainPtr, 10.0, 0.0)
-	overallDifficulty := ClampFloat(*overallDifficultyPtr, 10.0, 0.0)
-
-	if *fileTypePtr == "osu" {
-		color.HiBlue("* osu! specific: Using OD %f and HP %f.", overallDifficulty, hpDrain)
+	if conf.FileType == Osu {
+		color.HiBlue("* osu! specific: Using OD %f and HP %f.", conf.OverallDifficulty, conf.HPDrain)
 	}
 	// Check existence of output directory
-	_, err := os.Stat(filepath.FromSlash(*outputPtr))
+	_, err := os.Stat(filepath.FromSlash(conf.Output))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Check if temp folder is still left over
-	_, err = os.Stat(path.Join(filepath.FromSlash(*outputPtr), TempDir))
+	_, err = os.Stat(path.Join(filepath.FromSlash(conf.Output), TempDir))
 	if err != nil {
 		if os.IsNotExist(err) {
 			if !strings.Contains(err.Error(), "The system cannot find the file specified.") {
 				color.HiRed("* Failed to check for existence of the temporary directory. error: %s", err.Error())
 				return
 			} else {
-				if *verbosePtr {
+				if conf.Verbose {
 					color.HiBlack("* Temporary directory does not exist yet.")
 				}
 			}
 		}
 	} else {
-		if *verbosePtr {
+		if conf.Verbose {
 			color.HiBlack("* Temporary directory appears to already exist. Attempting to remove")
 		}
-		err = os.RemoveAll(path.Join(filepath.FromSlash(*outputPtr), TempDir))
+		err = os.RemoveAll(path.Join(filepath.FromSlash(conf.Output), TempDir))
 		if err != nil {
-			color.HiRed("* Failed to remove temporary directory. Location: %s error: %s", path.Join(filepath.FromSlash(*outputPtr), TempDir), err.Error())
+			color.HiRed("* Failed to remove temporary directory. Location: %s error: %s", path.Join(filepath.FromSlash(conf.Output), TempDir), err.Error())
 			return
 		}
-		if *verbosePtr {
+		if conf.Verbose {
 			color.HiBlack("* Deleted old temporary directory successfully")
 		}
 	}
 
-	if *verbosePtr {
+	if conf.Verbose {
 		color.HiBlack("* Decoding background image to memory.")
 	}
 
@@ -115,7 +98,7 @@ func main() {
 	}
 
 	// Scan input directory
-	inputFolders, err := ioutil.ReadDir(filepath.FromSlash(*inputPtr))
+	inputFolders, err := ioutil.ReadDir(filepath.FromSlash(conf.Input))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -124,12 +107,12 @@ func main() {
 		return
 	}
 
-	if *verbosePtr {
+	if conf.Verbose {
 		color.HiBlack("* Found %d directories to process.", len(inputFolders))
 	}
 
 	// Create temporary directory
-	err = os.Mkdir(path.Join(filepath.FromSlash(*outputPtr), TempDir), 0700)
+	err = os.Mkdir(path.Join(filepath.FromSlash(conf.Output), TempDir), 0700)
 	if err != nil {
 		color.HiRed("* Could not create a temporary folder inside the output directory. %s", err.Error())
 		return
@@ -148,8 +131,8 @@ func main() {
 			conversionStatus[fI].Skip = true
 			continue
 		}
-		input := filepath.ToSlash(path.Join(filepath.FromSlash(*inputPtr), f.Name()))
-		output := filepath.ToSlash(path.Join(filepath.FromSlash(*outputPtr), TempDir, f.Name()))
+		input := filepath.ToSlash(path.Join(filepath.FromSlash(conf.Input), f.Name()))
+		output := filepath.ToSlash(path.Join(filepath.FromSlash(conf.Output), TempDir, f.Name()))
 
 		var bmsChartFiles []string
 		files, err := ioutil.ReadDir(input)
@@ -160,7 +143,7 @@ func main() {
 		}
 		// Most BMS zip files appear to be nested :^(
 		if len(files) == 1 && files[0].IsDir() {
-			input = filepath.ToSlash(path.Join(filepath.FromSlash(*inputPtr), f.Name(), files[0].Name()))
+			input = filepath.ToSlash(path.Join(filepath.FromSlash(conf.Input), f.Name(), files[0].Name()))
 			files, err = ioutil.ReadDir(input)
 			if err != nil {
 				conversionStatus[fI].Skip = true
@@ -191,7 +174,7 @@ func main() {
 		}
 
 		// Copy all contents
-		if *verbosePtr {
+		if conf.Verbose {
 			color.HiBlack("* Checks passed; copying %s to %s.", input, output)
 		}
 		err = copy2.Copy(input, output)
@@ -201,58 +184,61 @@ func main() {
 			continue
 		}
 
-		if *verbosePtr {
+		if conf.Verbose {
 			color.HiBlack("* Copy succeeded, found %d charts.", len(bmsChartFiles))
 		}
 
 		zipExtension := "qp"
 		fileExtension := "qua"
-		switch *fileTypePtr {
-		case "osu":
+		switch conf.FileType {
+		case Osu:
 			zipExtension = "osz"
 			fileExtension = "osu"
 		}
 		for diffIndex, bmsFile := range bmsChartFiles {
-			if *verbosePtr {
+			if conf.Verbose {
 				color.HiBlack("* [%d/%d] Converting %s -> %s file type", diffIndex+1, len(bmsChartFiles), bmsFile, fileExtension)
 			}
-			convertedFile, err := GetConvertedFile(output, bmsFile, *verbosePtr, volInt, *noBracketsPtr)
+			fileData, err := conf.GetFileData(output, bmsFile)
 			if err != nil {
 				conversionStatus[fI].Fail++
 				color.HiRed("* %s wasn't parsed due to an error: %s", bmsFile, err.Error())
 				continue
 			}
-			if convertedFile == nil {
+			if fileData == nil {
 				color.HiYellow("* %s was skipped", bmsFile)
 				conversionStatus[fI].Fail++
 				continue
 			}
 
-			if *verbosePtr {
-				color.HiBlack("* Processed %d hit objects, %d sound effects and %d timing points", len(convertedFile.HitObjects), len(convertedFile.SoundEffects), len(convertedFile.TimingPoints))
+			if conf.Verbose {
+				color.HiBlack("* Processed %d hit objects, %d sound effects and %d timing points", len(fileData.HitObjects), len(fileData.SoundEffects), len(fileData.TimingPoints))
+				if conf.FileType == Osu {
+					color.HiBlack("* osu! specific: found %d background animation frames", len(fileData.BackgroundAnimation))
+				}
 			}
 
-			if len(convertedFile.Metadata.StageFile) == 0 {
+			if len(fileData.Meta.StageFile) == 0 {
 				// Copy BG image
-				bgFile, err := os.OpenFile(path.Join(filepath.FromSlash(*outputPtr), TempDir, f.Name(), "bg.png"), os.O_WRONLY|os.O_CREATE, 0777)
+				bgFile, err := os.OpenFile(path.Join(filepath.FromSlash(conf.Output), TempDir, f.Name(), "bg.png"), os.O_WRONLY|os.O_CREATE, 0777)
 				if err != nil {
-					color.HiRed("* Failed to open a new file for the background. Ignoring the error. (%s)", err.Error())
+					color.HiRed("* Failed to open a new file for the background; ignoring (%s)", err.Error())
 				} else {
 					e := png.Encode(bgFile, im)
 					if e != nil {
-						color.HiRed("* Failed to encode the background. Ignoring the error. (%s)", e.Error())
+						color.HiRed("* Failed to encode the background; ignoring (%s)", e.Error())
 					}
+					fileData.Meta.StageFile = "bg.png"
 					bgFile.Close()
 				}
-				convertedFile.Metadata.StageFile = "bg.png"
 			}
 
-			switch *fileTypePtr {
-			case "osu":
-				err = ConvertBmsToOsu(*convertedFile, path.Join(output, strings.TrimSuffix(bmsFile, path.Ext(bmsFile))+"."+fileExtension), hpDrain, overallDifficulty, volInt)
+			switch conf.FileType {
+			case Osu:
+				err = conf.ConvertBmsToOsu(*fileData, path.Join(output, strings.TrimSuffix(bmsFile, path.Ext(bmsFile))+"."+fileExtension))
 				break
 			default:
-				err = ConvertBmsToQua(*convertedFile, path.Join(output, strings.TrimSuffix(bmsFile, path.Ext(bmsFile))+"."+fileExtension))
+				err = ConvertBmsToQua(*fileData, path.Join(output, strings.TrimSuffix(bmsFile, path.Ext(bmsFile))+"."+fileExtension))
 			}
 			if err != nil {
 				conversionStatus[fI].Fail++
@@ -263,16 +249,16 @@ func main() {
 			conversionStatus[fI].Success++
 		}
 
-		if err := RecursiveZip(output, path.Join(filepath.FromSlash(*outputPtr), f.Name()+"."+zipExtension)); err != nil {
+		if err := RecursiveZip(output, path.Join(filepath.FromSlash(conf.Output), f.Name()+"."+zipExtension)); err != nil {
 			panic(err)
 		}
 
-		if *verbosePtr {
-			color.HiBlack("* Done")
+		if conf.Verbose {
+			color.HiBlack("* ---- Done ----")
 		}
 	}
 
-	color.HiGreen("* Done.")
+	color.HiGreen("* Finished conversion of all queued folders. Find them in %s", conf.Output)
 	for _, s := range conversionStatus {
 		if s.Skip {
 			color.HiYellow("* %s was skipped", s.Name)
@@ -281,11 +267,11 @@ func main() {
 		color.White("* %s: %d %s and %d %s", s.Name, s.Fail, color.YellowString("not converted"), s.Success, color.HiGreenString("succeeded"))
 	}
 
-	e := os.RemoveAll(path.Join(filepath.FromSlash(*outputPtr), TempDir))
+	e := os.RemoveAll(path.Join(filepath.FromSlash(conf.Output), TempDir))
 	if e != nil {
 		color.HiRed("* Failed to remove temp dir. %s", e.Error())
 	} else {
-		if *verbosePtr {
+		if conf.Verbose {
 			color.HiBlack("* Cleaned up temp dir successfully.")
 		}
 	}

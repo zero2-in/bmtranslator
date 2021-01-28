@@ -3,10 +3,22 @@ package main
 import (
 	"os"
 	"regexp"
+	"strings"
 )
 
-func GetDifficultyName(i string) string {
-	return "Lv. " + i
+func GetDifficultyName(i string, sub string) string {
+	b := "Lv. " + i
+	if len(sub) == 0 {
+		return b
+	}
+	return sub + " " + b
+}
+
+func AppendSubartistsToArtist(a string, subartists []string) string {
+	if len(subartists) == 0 {
+		return a
+	}
+	return a + " <" + strings.Join(subartists, " | ") + ">"
 }
 
 func WriteLine(f *os.File, s string) error {
@@ -14,11 +26,11 @@ func WriteLine(f *os.File, s string) error {
 	return e
 }
 
-func GetCorrespondingHitSound(hitSoundHexArray []string, target string, volume int) *HitObjectKeySound {
+func (conf *ProgramConfig) GetCorrespondingHitSound(hitSoundHexArray []string, target string) *KeySound {
 	for ind, v := range hitSoundHexArray {
 		if v == target {
-			return &HitObjectKeySound{
-				Volume: volume,
+			return &KeySound{
+				Volume: conf.Volume,
 				Sample: ind + 1,
 			}
 		}
