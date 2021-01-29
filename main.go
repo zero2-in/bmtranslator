@@ -45,6 +45,7 @@ func main() {
 		color.HiBlack("* Output wanted: %s", conf.Output)
 		color.HiBlack("* Volume: %d", conf.Volume)
 		color.HiBlack("* Verbose: %t", conf.Verbose)
+		color.HiBlack("* Dump file data to output: %t", conf.DumpFileData)
 	}
 
 	if conf.FileType == Osu {
@@ -233,17 +234,26 @@ func main() {
 				}
 			}
 
+			writeTo := path.Join(output, strings.TrimSuffix(bmsFile, path.Ext(bmsFile))+"."+fileExtension)
 			switch conf.FileType {
 			case Osu:
-				err = conf.ConvertBmsToOsu(*fileData, path.Join(output, strings.TrimSuffix(bmsFile, path.Ext(bmsFile))+"."+fileExtension))
+				err = conf.ConvertBmsToOsu(*fileData, writeTo)
 				break
 			default:
-				err = ConvertBmsToQua(*fileData, path.Join(output, strings.TrimSuffix(bmsFile, path.Ext(bmsFile))+"."+fileExtension))
+				err = ConvertBmsToQua(*fileData, writeTo)
 			}
 			if err != nil {
 				conversionStatus[fI].Fail++
 				color.HiYellow("* %s wasn't written to due to an error: %s", bmsFile, err.Error())
 				continue
+			}
+
+			if conf.DumpFileData {
+				bmsFileName := strings.TrimSuffix(bmsFile, path.Ext(bmsFile))
+				err = conf.WriteDump(*fileData, path.Join(filepath.FromSlash(conf.Output), f.Name()+"-"+bmsFileName+".txt"), bmsFileName)
+				if err != nil && conf.Verbose {
+					color.HiYellow("* failed to write dump for %s: %s (conversion still succeeded)", bmsFile, err.Error())
+				}
 			}
 
 			conversionStatus[fI].Success++

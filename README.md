@@ -24,6 +24,7 @@ Output to osu! with volume of 90% and more logs enabled: `bmt.exe -i /path/to/in
 |  `--keep-subtitles` | If this is specified, [implicit subtitles](https://hitkey.nekokan.dyndns.info/cmds.htm#TITLE-IMPLICIT-SUBTITLE) will NOT be removed from song titles. | N/A |
 |  `--no-storyboard` | **osu! only.** If this is specified, background animation frames won't be parsed or inserted into the output files. | N/A |
 |  `--no-measure-lines` | If this is specified, timing points will **not** be added at the end of each track to create visible measure lines. (It's a cosmetic thing and doesn't affect gameplay, but it might make slowjam unreadable. Some BMS files will appear unsnapped with timing lines if this is enabled.) | N/A |
+|  `--dump-file-data` | If this is specified, raw file data will be dumped to a `.txt` file, which is put into the output folder. Each file will contain everything that BMTranslator knew about a BMS file. (Don't enable this unless you know what you're doing) | N/A |
 
 ## Credits
 
