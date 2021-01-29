@@ -44,8 +44,9 @@ func (conf *ProgramConfig) ReadBMSFile(inputPath string, bmsFileName string) (*F
 	// Prevents this line from being read and immediately skip to the next one.
 	ignoreLine := false
 
-	lineIndex := 1
+	lineIndex := 0
 	for scanner.Scan() {
+		lineIndex++
 		line := scanner.Text()
 		if !strings.HasPrefix(line, "#") {
 			continue
@@ -241,6 +242,11 @@ func (conf *ProgramConfig) ReadBMSFile(inputPath string, bmsFileName string) (*F
 					color.HiYellow("* BMP invalid, ignoring (Line: %d)", lineIndex)
 					continue
 				}
+				exists := FileExists(line[7:])
+				if !exists {
+					color.HiYellow("* \"%s\" wasn't found; ignoring (Line: %d)", line[7:], lineIndex)
+					continue
+				}
 				fileData.BGAIndex[lineLower[4:6]] = line[7:]
 			} else if strings.HasPrefix(lineLower, "#stop") {
 				if len(line) < 9 {
@@ -268,13 +274,12 @@ func (conf *ProgramConfig) ReadBMSFile(inputPath string, bmsFileName string) (*F
 				// Just to be safe and to future-proof, we search the filesystem for the right file.
 				soundEffect := SearchForSoundFile(inputPath, line[7:])
 				if len(soundEffect) == 0 {
-					color.HiYellow("* (#WAV) %s wasn't found or isn't either .wav, .mp3, .ogg, or .3gp. (Line: %d)", line[7:], lineIndex)
+					color.HiYellow("* (#WAV) \"%s\" wasn't found or isn't either .wav, .mp3, .ogg, or .3gp. ignoring (Line: %d)", line[7:], lineIndex)
 					continue
 				}
 				fileData.SoundStringArray = append(fileData.SoundStringArray, soundEffect)
 				fileData.SoundHexArray = append(fileData.SoundHexArray, lineLower[4:6])
 			}
-			lineIndex++
 			continue
 		}
 

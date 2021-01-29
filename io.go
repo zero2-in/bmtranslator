@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+// BMS #WAV values can have mismatching extensions (sometimes it's .wav when it's actually .ogg on the filesystem).
+// This will correct the extension, or return nothing if it wasn't found.
 func SearchForSoundFile(originalPath string, pathToSoundFile string) string {
 	possibleExtensions := []string{".wav", ".mp3", ".ogg", ".3gp"}
 
@@ -21,4 +23,10 @@ func SearchForSoundFile(originalPath string, pathToSoundFile string) string {
 	}
 
 	return ""
+}
+
+// Call os.Stat to see if a file exists or not. Returns true if it does.
+func FileExists(location string) bool {
+	_, e := os.Stat(location)
+	return e == nil
 }

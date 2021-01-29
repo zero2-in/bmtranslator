@@ -4,27 +4,27 @@ Converts your BMS levels to zip archives that you can import into other rhythm g
 
 ## How to Use
 
-Output to Quaver with default volume of 100%: `bmt.exe -i /path/to/input -o /path/to/output`
+Output to Quaver: `bmt.exe -i /path/to/input -o /path/to/output`
 
-Output to osu! with volume of 90% and more logs enabled: `bmt.exe -i /path/to/input -o /path/to/output -type osu -vol 90 --v`
+Output to osu: `bmt.exe -i /path/to/input -o /path/to/output -type osu`
 
 **NOTE: Don't set the output (`-o`) to your game's Songs folder!** Create a separate output folder first, then import by dragging them into the game.
 
 ## Options
 
-| Option | Description  | Default |
-| ------------ | ------------ | ---- |
-|  `-i` | Path of input folder containing FOLDERS of bms charts (NOT zip files!!!). If the folder is nested in another folder, just leave it, BMT will automatically handle that.  | N/A |
-|  `-o` | Path to output the converted files to. | N/A |
-|  `-vol` | Volume of hit sounds. (0-100) | 100 |
-|  `-type` | Which type of file to convert to. You can choose `quaver` or `osu`. | quaver |
-|  `-hp` | **osu! only.** Specify the HP drain rate. (0.0-10.0) | 8.5 |
-|  `-od` | **osu! only.** Specify the overall difficulty. (0.0-10.0) | 8.0 |
-|  `--v` | If this is specified, all logs (including some debug information) will be shown. Useful if you want to know why some maps didn't convert. | N/A |
-|  `--keep-subtitles` | If this is specified, [implicit subtitles](https://hitkey.nekokan.dyndns.info/cmds.htm#TITLE-IMPLICIT-SUBTITLE) will NOT be removed from song titles. | N/A |
-|  `--no-storyboard` | **osu! only.** If this is specified, background animation frames won't be parsed or inserted into the output files. | N/A |
-|  `--no-measure-lines` | If this is specified, timing points will **not** be added at the end of each track to create visible measure lines. (It's a cosmetic thing and doesn't affect gameplay, but it might make slowjam unreadable. Some BMS files will appear unsnapped with timing lines if this is enabled.) | N/A |
-|  `--dump-file-data` | If this is specified, raw file data will be dumped to a `.txt` file, which is put into the output folder. Each file will contain everything that BMTranslator knew about a BMS file. (Don't enable this unless you know what you're doing) | N/A |
+| Option | Arguments? | Description  | Default |
+| ------------ | ---- | ---------- | ---- |
+|  `-i` | Yes | Path of input folder containing FOLDERS of bms charts (NOT zip files!!!). If the folder is nested in another folder, just leave it, BMT will automatically handle that.  | N/A |
+|  `-o` | Yes | Path to output the converted files to. | N/A |
+|  `-vol` | Yes | Volume of hit sounds. (0-100) | 100 |
+|  `-type` | Yes | Which type of file to convert to. You can choose `quaver` or `osu`. | quaver |
+|  `-hp` | Yes | **osu! only.** Specify the HP drain rate. (0.0-10.0) | 8.5 |
+|  `-od` | Yes | **osu! only.** Specify the overall difficulty. (0.0-10.0) | 8.0 |
+|  `-v` | No | If this is specified, all logs (including some debug information) will be shown. Useful if you want to know why some maps didn't convert. | N/A |
+|  `-keep-subtitles` | No | If this is specified, [implicit subtitles](https://hitkey.nekokan.dyndns.info/cmds.htm#TITLE-IMPLICIT-SUBTITLE) will NOT be removed from song titles. | N/A |
+|  `-no-storyboard` | No | **osu! only.** If this is specified, background animation frames won't be parsed or inserted into the output files. | N/A |
+|  `-no-measure-lines` | No | If this is specified, timing points will **not** be added at the end of each track to create visible measure lines. (It's a cosmetic thing and doesn't affect gameplay, but it might make slowjam unreadable. Some BMS files will appear unsnapped with timing lines if this is enabled.) | N/A |
+|  `-dump-file-data` | No | If this is specified, raw file data will be dumped to a `.txt` file, which is put into the output folder. Each file will contain everything that BMTranslator knew about a BMS file. (Don't enable this unless you know what you're doing) | N/A |
 
 ## Credits
 

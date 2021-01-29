@@ -37,6 +37,8 @@ func (conf *ProgramConfig) ConvertBmsToOsu(fileData FileData, outputPath string)
 	_ = WriteLine(osuFile, "TimelineZoom: 1")
 
 	_ = WriteLine(osuFile, "[Metadata]")
+	_ = WriteLine(osuFile, fmt.Sprintf("Title:%s", fileData.Meta.Title))
+	_ = WriteLine(osuFile, fmt.Sprintf("Artist:%s", fileData.Meta.Artist))
 	_ = WriteLine(osuFile, fmt.Sprintf("TitleUnicode:%s", fileData.Meta.Title))
 	_ = WriteLine(osuFile, fmt.Sprintf("ArtistUnicode:%s", fileData.Meta.Artist))
 	_ = WriteLine(osuFile, fmt.Sprintf("Creator:%s", AppendSubartistsToArtist(fileData.Meta.Artist, fileData.Meta.Subartists)))

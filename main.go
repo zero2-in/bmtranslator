@@ -51,14 +51,21 @@ func main() {
 	if conf.FileType == Osu {
 		color.HiBlue("* osu! specific: Using OD %f and HP %f.", conf.OverallDifficulty, conf.HPDrain)
 	}
-	// Check existence of output directory
-	_, err := os.Stat(filepath.FromSlash(conf.Output))
-	if err != nil {
-		log.Fatal(err)
+	// Check existence of input & output directory
+	inputExists := FileExists(conf.Input)
+	if !inputExists {
+		color.HiRed("* The input directory does not exist.")
+		return
+	}
+
+	outputExists := FileExists(conf.Output)
+	if !outputExists {
+		color.HiRed("* The output directory does not exist.")
+		return
 	}
 
 	// Check if temp folder is still left over
-	_, err = os.Stat(path.Join(filepath.FromSlash(conf.Output), TempDir))
+	_, err := os.Stat(path.Join(filepath.FromSlash(conf.Output), TempDir))
 	if err != nil {
 		if os.IsNotExist(err) {
 			if !strings.Contains(err.Error(), "The system cannot find the file specified.") {
@@ -196,6 +203,7 @@ func main() {
 			zipExtension = "osz"
 			fileExtension = "osu"
 		}
+		bgCopied := false
 		for diffIndex, bmsFile := range bmsChartFiles {
 			if conf.Verbose {
 				color.HiBlack("* [%d/%d] Converting %s -> %s file type", diffIndex+1, len(bmsChartFiles), bmsFile, fileExtension)
@@ -219,7 +227,7 @@ func main() {
 				}
 			}
 
-			if len(fileData.Meta.StageFile) == 0 {
+			if len(fileData.Meta.StageFile) == 0 && !bgCopied {
 				// Copy BG image
 				bgFile, err := os.OpenFile(path.Join(filepath.FromSlash(conf.Output), TempDir, f.Name(), "bg.png"), os.O_WRONLY|os.O_CREATE, 0777)
 				if err != nil {
@@ -229,9 +237,12 @@ func main() {
 					if e != nil {
 						color.HiRed("* Failed to encode the background; ignoring (%s)", e.Error())
 					}
-					fileData.Meta.StageFile = "bg.png"
 					bgFile.Close()
+					bgCopied = true
 				}
+			}
+			if bgCopied {
+				fileData.Meta.StageFile = "bg.png"
 			}
 
 			writeTo := path.Join(output, strings.TrimSuffix(bmsFile, path.Ext(bmsFile))+"."+fileExtension)
