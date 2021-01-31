@@ -19,7 +19,7 @@ type FileData struct {
 	StopIndex           map[string]float64
 	BGAIndex            map[string]string
 	SoundEffects        []SoundEffect
-	HitObjects          []HitObject
+	HitObjects          map[int][]HitObject
 	TimingPoints        map[float64]float64
 	BackgroundAnimation []BackgroundAnimation
 }
@@ -50,7 +50,6 @@ type HitObject struct {
 	StartTime  float64
 	EndTime    float64
 	IsLongNote bool
-	Lane       int
 	KeySounds  *KeySound
 }
 

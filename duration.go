@@ -31,13 +31,13 @@ func GetTotalTrackDuration(initialBPM float64, data LocalTrackData) float64 {
 
 	for i, change := range data.BPMChanges {
 		if i == 0 {
-			baseLength += GetTrackDurationGivenBPM(initialBPM, data.MeasureScale) * change.Position
+			baseLength += GetTrackDurationGivenBPM(initialBPM, data.MeasureScale) * (change.Position / 100.0)
 		}
 		baseLength += GetBPMChangeOffset(i, data)
 	}
 	if len(data.BPMChanges) == 0 {
 		baseLength += GetTrackDurationGivenBPM(initialBPM, data.MeasureScale)
 	}
-	stopTime := GetStopOffset(initialBPM, 1.0, data)
+	stopTime := GetStopOffset(initialBPM, 100.0, data)
 	return baseLength + stopTime
 }

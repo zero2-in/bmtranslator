@@ -54,19 +54,22 @@ func (conf *ProgramConfig) WriteDump(fileData FileData, outputPath string, forBm
 		_ = WriteLine(dest, fmt.Sprintf("%f %s", v.StartTime, fileData.SoundHexArray[v.Sample-1]))
 	}
 	_ = WriteLine(dest, "hit objects")
-	for _, v := range fileData.HitObjects {
-		isLn := 0
-		if v.IsLongNote {
-			isLn = 1
+	for lane, objects := range fileData.HitObjects {
+		for _, obj := range objects {
+			isLn := 0
+			if obj.IsLongNote {
+				isLn = 1
+			}
+			var keysound string
+			if obj.KeySounds == nil {
+				keysound = "null"
+			} else {
+				keysound = fileData.SoundHexArray[obj.KeySounds.Sample-1]
+			}
+			_ = WriteLine(dest, fmt.Sprintf("%f %d %d %f %s", obj.StartTime, lane, isLn, obj.EndTime, keysound))
 		}
-		var keysound string
-		if v.KeySounds == nil {
-			keysound = "null"
-		} else {
-			keysound = fileData.SoundHexArray[v.KeySounds.Sample-1]
-		}
-		_ = WriteLine(dest, fmt.Sprintf("%f %d %d %f %s", v.StartTime, v.Lane, isLn, v.EndTime, keysound))
 	}
+
 	_ = WriteLine(dest, "timing points")
 	for k, v := range fileData.TimingPoints {
 		_ = WriteLine(dest, fmt.Sprintf("%f %f", k, v))

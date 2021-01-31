@@ -6,7 +6,6 @@ import (
 	"os"
 	"path"
 	"sort"
-	"strconv"
 )
 
 const (
@@ -61,9 +60,9 @@ func (conf *ProgramConfig) ConvertBmsToOsu(fileData FileData, outputPath string)
 
 	if !conf.NoStoryboard {
 		for i, bga := range fileData.BackgroundAnimation {
-			endTime := ""
+			endTime := 0.0
 			if i+1 != len(fileData.BackgroundAnimation) {
-				endTime = strconv.Itoa(int(fileData.BackgroundAnimation[i+1].StartTime))
+				endTime = fileData.BackgroundAnimation[i+1].StartTime
 			}
 			vExt := path.Ext(bga.File)
 			layer := "Background"
@@ -73,7 +72,7 @@ func (conf *ProgramConfig) ConvertBmsToOsu(fileData FileData, outputPath string)
 			if !(vExt == ".wmv" || vExt == ".mpg" || vExt == ".avi" || vExt == ".mp4" || vExt == ".webm" || vExt == ".mkv") {
 				_ = WriteLine(osuFile, fmt.Sprintf("Sprite,%s,%s,\"%s\",%d,%d", layer, "CentreRight", bga.File, 600, 240))
 				// osu doesn't like decimals in starting/ending times
-				_ = WriteLine(osuFile, fmt.Sprintf("_F,0,%d,%s,%d", int(bga.StartTime), endTime, 1))
+				_ = WriteLine(osuFile, fmt.Sprintf("_F,0,%d,%d,%d", int(bga.StartTime), int(endTime), 1))
 			} else {
 				_ = WriteLine(osuFile, fmt.Sprintf("Video,%d,\"%s\"", int(bga.StartTime), bga.File))
 			}
@@ -114,40 +113,42 @@ func (conf *ProgramConfig) ConvertBmsToOsu(fileData FileData, outputPath string)
 	}
 
 	_ = WriteLine(osuFile, "[HitObjects]")
-	for _, obj := range fileData.HitObjects {
-		objType := 1 << 0
-		if obj.IsLongNote {
-			objType = 1 << 7
-		}
-		xPos := 64 * obj.Lane
-		if obj.Lane == 8 {
-			xPos = 32
-		} else {
-			xPos += 32
-		}
-		var hitSound string
-		if obj.KeySounds != nil {
-			hitSound = fileData.SoundStringArray[obj.KeySounds.Sample-1]
-		}
-		if objType == 1<<7 {
-			_ = WriteLine(osuFile, fmt.Sprintf("%d,%d,%d,%d,%d,%d:0:0:0:0:%s",
-				xPos,
-				OsuYPos,
-				int(obj.StartTime),
-				objType,
-				0,
-				int(obj.EndTime),
-				hitSound,
-			))
-		} else {
-			_ = WriteLine(osuFile, fmt.Sprintf("%d,%d,%d,%d,%d,0:0:0:0:%s",
-				xPos,
-				OsuYPos,
-				int(obj.StartTime),
-				objType,
-				0,
-				hitSound,
-			))
+	for lane, objects := range fileData.HitObjects {
+		for _, obj := range objects {
+			objType := 1 << 0
+			if obj.IsLongNote {
+				objType = 1 << 7
+			}
+			xPos := 64 * lane
+			if lane == 8 {
+				xPos = 32
+			} else {
+				xPos += 32
+			}
+			var hitSound string
+			if obj.KeySounds != nil {
+				hitSound = fileData.SoundStringArray[obj.KeySounds.Sample-1]
+			}
+			if objType == 1<<7 && int(obj.EndTime) > int(obj.StartTime) {
+				_ = WriteLine(osuFile, fmt.Sprintf("%d,%d,%d,%d,%d,%d:0:0:0:0:%s",
+					xPos,
+					OsuYPos,
+					int(obj.StartTime),
+					objType,
+					0,
+					int(obj.EndTime),
+					hitSound,
+				))
+			} else {
+				_ = WriteLine(osuFile, fmt.Sprintf("%d,%d,%d,%d,%d,0:0:0:0:%s",
+					xPos,
+					OsuYPos,
+					int(obj.StartTime),
+					1<<0,
+					0,
+					hitSound,
+				))
+			}
 		}
 	}
 

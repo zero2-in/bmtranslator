@@ -61,22 +61,18 @@ func ConvertBmsToQua(fileData FileData, outputPath string) error {
 	_ = WriteLine(quaFile, "SliderVelocities: []")
 	// Process Hit Objects
 	_ = WriteLine(quaFile, "HitObjects:")
-	for _, h := range fileData.HitObjects {
-		_ = WriteLine(quaFile, "- StartTime: "+strconv.Itoa(int(h.StartTime)))
-		_ = WriteLine(quaFile, "  Lane: "+strconv.Itoa(h.Lane))
-		if h.IsLongNote {
-			if h.EndTime == 0.0 {
-				// This long note is invalid/doesn't have an ending time.
-				continue
+	for lane, objects := range fileData.HitObjects {
+		for _, obj := range objects {
+			_ = WriteLine(quaFile, "- StartTime: "+strconv.Itoa(int(obj.StartTime)))
+			_ = WriteLine(quaFile, "  Lane: "+strconv.Itoa(lane))
+			if obj.IsLongNote && int(obj.EndTime) > int(obj.StartTime) {
+				_ = WriteLine(quaFile, "  EndTime: "+strconv.Itoa(int(obj.EndTime)))
 			}
-			_ = WriteLine(quaFile, "  EndTime: "+strconv.Itoa(int(h.EndTime)))
-		}
-		if h.KeySounds != nil {
-			_ = WriteLine(quaFile, "  KeySounds:")
-			_ = WriteLine(quaFile, "  - Sample: "+strconv.Itoa(h.KeySounds.Sample))
-			_ = WriteLine(quaFile, "    Volume: "+strconv.Itoa(h.KeySounds.Volume))
-		} else {
-			_ = WriteLine(quaFile, "  KeySounds: []")
+			if obj.KeySounds != nil {
+				_ = WriteLine(quaFile, "  KeySounds:")
+				_ = WriteLine(quaFile, "  - Sample: "+strconv.Itoa(obj.KeySounds.Sample))
+				_ = WriteLine(quaFile, "    Volume: "+strconv.Itoa(obj.KeySounds.Volume))
+			}
 		}
 	}
 

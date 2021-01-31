@@ -8,7 +8,9 @@ import (
 )
 
 var (
-	mineRegex        = regexp.MustCompile("[d-e][1-9]")
+	//ignore mines....for now.
+	// Quaver might implement this in the future
+	mineRegex        = regexp.MustCompile("[d][1-9]")
 	noteRegex        = regexp.MustCompile("[1][1-9]")
 	player2NoteRegex = regexp.MustCompile("[2][1-9]")
 	lnRegex          = regexp.MustCompile("[5][1-z]")
@@ -20,7 +22,7 @@ func getHexadecimalPair(i int, str string) string {
 }
 
 func getFraction(i int, str string) float64 {
-	return float64(i) / (float64(len(str)) / 2.0)
+	return 100.0 * (float64(i) / (float64(len(str)) / 2.0))
 }
 
 // Converts from BMS to a ConvertedFile. Returns a ConvertedFile, whether file was skipped or not, and an error if it errored.
@@ -45,7 +47,7 @@ func (conf *ProgramConfig) GetFileData(inputPath string, bmsFileName string) (*F
 		return nil, nil
 	}
 	startTrackWithBPM = fileData.StartingBPM
-	fileData.TimingPoints = map[float64]float64{}
+
 	fileData.TimingPoints[0.0] = fileData.StartingBPM
 
 	// Sort all tracks in ascending order
@@ -91,40 +93,38 @@ func (conf *ProgramConfig) GetFileData(inputPath string, bmsFileName string) (*F
 				sfx := conf.GetCorrespondingHitSound(fileData.SoundHexArray, target)
 				if noteRegex.MatchString(line.Channel) || lnRegex.MatchString(line.Channel) {
 					laneInt := strings.Index(Base36Range, line.Channel[1:])
-					hitObject := HitObject{
-						Lane:      laneInt,
-						StartTime: startTrackAt + localOffset,
-					}
 					if laneInt == 6 {
 						// Uses the channel for the scratch lane, manually adjust to lane 8
-						hitObject.Lane = 8
+						laneInt = 8
 					} else if laneInt >= 8 {
 						// Compensate for notes past 8th key (6th and 7th lane)
-						hitObject.Lane -= 2
+						laneInt -= 2
 					}
-					// This file is for 9K, 14K, etc. so it is not compatible.
-					if hitObject.Lane > 8 {
+					if laneInt > 8 {
 						color.HiRed("* File wants more than 8 keys, skipping")
 						return nil, nil
 					}
+					hitObject := HitObject{
+						StartTime: startTrackAt + localOffset,
+					}
 
 					// Closes the long note
-					if len(fileData.LnObject) > 0 && target == fileData.LnObject {
-						if len(fileData.HitObjects) == 0 {
+					if target == fileData.LnObject {
+						if len(fileData.HitObjects[laneInt]) == 0 {
 							// Why is there an LN tail as the first object??
 							continue
 						}
-						back := len(fileData.HitObjects) - 1
-						if fileData.HitObjects[back].KeySounds == nil {
-							// Previous hit object didn't have key sounds.
-							// That means the previous value is a LN object, so we don't add a new one.
+						back := len(fileData.HitObjects[laneInt]) - 1
+						//if fileData.HitObjects[back].KeySounds == nil {
+						//	// Previous hit object didn't have key sounds.
+						//	// That means the previous value is a LN object, so we don't add a new one.
+						//	continue
+						//}
+						if fileData.HitObjects[laneInt][back].StartTime >= hitObject.StartTime {
 							continue
 						}
-						if fileData.HitObjects[back].StartTime >= hitObject.StartTime {
-							continue
-						}
-						fileData.HitObjects[back].IsLongNote = true
-						fileData.HitObjects[back].EndTime = hitObject.StartTime
+						fileData.HitObjects[laneInt][back].IsLongNote = true
+						fileData.HitObjects[laneInt][back].EndTime = hitObject.StartTime
 						continue
 					}
 					if sfx != nil {
@@ -134,20 +134,20 @@ func (conf *ProgramConfig) GetFileData(inputPath string, bmsFileName string) (*F
 					// This is a long note existing in channels 51-59. We save it to a map storing these values.
 					if lnRegex.MatchString(line.Channel) {
 						// This is the end of a long note. Now, we can place the note.
-						if longNoteTracker[hitObject.Lane] != 0.0 {
+						if longNoteTracker[laneInt] != 0.0 {
 							// haha funny end time joke
 							hitObject.EndTime = hitObject.StartTime
-							hitObject.StartTime = longNoteTracker[hitObject.Lane]
+							hitObject.StartTime = longNoteTracker[laneInt]
 							hitObject.IsLongNote = true
-							if longNoteSoundEffectTracker[hitObject.Lane] != nil {
+							if longNoteSoundEffectTracker[laneInt] != nil {
 								hitObject.KeySounds = &KeySound{
-									Sample: longNoteSoundEffectTracker[hitObject.Lane].Sample,
-									Volume: longNoteSoundEffectTracker[hitObject.Lane].Volume,
+									Sample: longNoteSoundEffectTracker[laneInt].Sample,
+									Volume: longNoteSoundEffectTracker[laneInt].Volume,
 								}
 							}
 							// Reset values
-							longNoteTracker[hitObject.Lane] = 0.0
-							longNoteSoundEffectTracker[hitObject.Lane] = nil
+							longNoteTracker[laneInt] = 0.0
+							longNoteSoundEffectTracker[laneInt] = nil
 							// Invalid long note because it ends either before or exactly at the position it ends.
 							// In other words, do not process it.
 							if hitObject.EndTime <= hitObject.StartTime {
@@ -155,12 +155,12 @@ func (conf *ProgramConfig) GetFileData(inputPath string, bmsFileName string) (*F
 							}
 						} else {
 							// This is the head of a long note, so we store its start time and key sounds for later.
-							longNoteTracker[hitObject.Lane] = hitObject.StartTime
-							longNoteSoundEffectTracker[hitObject.Lane] = hitObject.KeySounds
+							longNoteTracker[laneInt] = hitObject.StartTime
+							longNoteSoundEffectTracker[laneInt] = hitObject.KeySounds
 							continue
 						}
 					}
-					fileData.HitObjects = append(fileData.HitObjects, hitObject)
+					fileData.HitObjects[laneInt] = append(fileData.HitObjects[laneInt], hitObject)
 					continue
 				}
 				if line.Channel == "01" {

@@ -171,7 +171,7 @@ func main() {
 			if f.Size() == 0 || f.IsDir() {
 				continue
 			}
-			if strings.HasSuffix(f.Name(), ".bms") || strings.HasSuffix(f.Name(), ".bme") || strings.HasSuffix(f.Name(), ".bml") {
+			if strings.HasSuffix(f.Name(), ".bms") || strings.HasSuffix(f.Name(), ".bml") || strings.HasSuffix(f.Name(), ".bme") {
 				bmsChartFiles = append(bmsChartFiles, f.Name())
 			}
 		}
@@ -220,11 +220,8 @@ func main() {
 				continue
 			}
 
-			if conf.Verbose {
-				color.HiBlack("* Processed %d hit objects, %d sound effects and %d timing points", len(fileData.HitObjects), len(fileData.SoundEffects), len(fileData.TimingPoints))
-				if conf.FileType == Osu {
-					color.HiBlack("* osu! specific: found %d background animation frames", len(fileData.BackgroundAnimation))
-				}
+			if conf.FileType == Osu && conf.Verbose {
+				color.HiBlack("* osu! specific: found %d background animation frames", len(fileData.BackgroundAnimation))
 			}
 
 			if len(fileData.Meta.StageFile) == 0 && !bgCopied {

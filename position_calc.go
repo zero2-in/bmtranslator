@@ -9,7 +9,7 @@ func CalculateTimingPoints(currentTime float64, startTrackWithBPM float64, data 
 
 		for i, tc := range data.BPMChanges {
 			if i == 0 {
-				timeElapsed += GetTrackDurationGivenBPM(startTrackWithBPM, data.MeasureScale) * tc.Position
+				timeElapsed += GetTrackDurationGivenBPM(startTrackWithBPM, data.MeasureScale) * (tc.Position / 100.0)
 			}
 			stopTime := GetStopOffset(startTrackWithBPM, tc.Position, data)
 
@@ -31,15 +31,15 @@ func CalculateTimingPoints(currentTime float64, startTrackWithBPM float64, data 
 			timeElapsed := 0.0
 			for i, tempoChange := range data.BPMChanges {
 				if i == 0 {
-					timeElapsed += GetTrackDurationGivenBPM(startTrackWithBPM, data.MeasureScale) * tempoChange.Position
+					timeElapsed += GetTrackDurationGivenBPM(startTrackWithBPM, data.MeasureScale) * (tempoChange.Position / 100.0)
 				}
 				// Iterate over all STOP commands to see if any lie within this tempo change.
 				for _, stop := range data.Stops {
-					if (i+1 < len(data.BPMChanges) && data.BPMChanges[i+1].Position > stop.Position && stop.Position >= tempoChange.Position) || i+1 == len(data.BPMChanges) {
+					if (i+1 < len(data.BPMChanges) && data.BPMChanges[i+1].Position > stop.Position && stop.Position >= tempoChange.Position) || (i+1 == len(data.BPMChanges) && stop.Position >= tempoChange.Position) {
 						stopTime := GetStopOffset(startTrackWithBPM, stop.Position, data)
 						// Adds the following: Time of beginning of track + time already passed by previous BPM changes
 						// + time already passed by STOP commands + time passed based on location in range
-						startAt := currentTime + timeElapsed + stopTime + (GetTrackDurationGivenBPM(tempoChange.Bpm, data.MeasureScale) * (stop.Position - tempoChange.Position))
+						startAt := currentTime + timeElapsed + stopTime + (GetTrackDurationGivenBPM(tempoChange.Bpm, data.MeasureScale) * ((stop.Position - tempoChange.Position) / 100.0))
 						endAt := startAt + GetStopDuration(tempoChange.Bpm, stop.Duration)
 						points[startAt] = 0.0
 						points[endAt] = tempoChange.Bpm
@@ -52,16 +52,16 @@ func CalculateTimingPoints(currentTime float64, startTrackWithBPM float64, data 
 			timeElapsed := 0.0
 			for stopIndex, stop := range data.Stops {
 				if stopIndex == 0 {
-					timeElapsed += GetTrackDurationGivenBPM(startTrackWithBPM, data.MeasureScale) * stop.Position
+					timeElapsed += GetTrackDurationGivenBPM(startTrackWithBPM, data.MeasureScale) * (stop.Position / 100.0)
 				}
 				stopTime := GetStopOffset(startTrackWithBPM, stop.Position, data)
 				points[currentTime+timeElapsed+stopTime] = 0.0
 				points[currentTime+timeElapsed+stopTime+GetStopDuration(startTrackWithBPM, stop.Duration)] = startTrackWithBPM
 				// Add additional time, so we know where we are in the next iteration.
 				if stopIndex+1 < len(data.Stops) {
-					timeElapsed += GetTrackDurationGivenBPM(startTrackWithBPM, data.MeasureScale) * (data.Stops[stopIndex+1].Position - stop.Position)
+					timeElapsed += GetTrackDurationGivenBPM(startTrackWithBPM, data.MeasureScale) * ((data.Stops[stopIndex+1].Position - stop.Position) / 100.0)
 				} else if stopIndex+1 == len(data.Stops) {
-					timeElapsed += GetTrackDurationGivenBPM(startTrackWithBPM, data.MeasureScale) * ((1.0 - stop.Position) / 1.0)
+					timeElapsed += GetTrackDurationGivenBPM(startTrackWithBPM, data.MeasureScale) * ((100.0 - stop.Position) / 100.0)
 				}
 			}
 		}
@@ -73,11 +73,11 @@ func CalculateTimingPoints(currentTime float64, startTrackWithBPM float64, data 
 func GetOffsetFromStartingTime(data *LocalTrackData, index int, message string, startTrackWithBPM float64) float64 {
 	// Essentially beat snap
 	measure := float64(len(message) / 2)
-	notePos := float64(index) / measure
+	notePos := (float64(index) / measure) * 100.0
 
 	// No change in tempo OR stop command. In this scenario, we can just ignore everything sent to us because it doesn't matter LOL
 	if len(data.BPMChanges) == 0 && len(data.Stops) == 0 {
-		return GetTrackDurationGivenBPM(startTrackWithBPM, data.MeasureScale) * notePos
+		return GetTrackDurationGivenBPM(startTrackWithBPM, data.MeasureScale) * (notePos / 100.0)
 	}
 
 	// Hold the offset after the starting time.
@@ -88,25 +88,25 @@ func GetOffsetFromStartingTime(data *LocalTrackData, index int, message string, 
 			if notePos < t.Position {
 				// Doesn't belong to any tempo change.
 				// This is because it happens before the first tempo change.
-				timeToAdd += GetTrackDurationGivenBPM(startTrackWithBPM, data.MeasureScale) * notePos
+				timeToAdd += GetTrackDurationGivenBPM(startTrackWithBPM, data.MeasureScale) * (notePos / 100.0)
 				break
 			} else {
 				// Compensate for time before first tempo change
-				timeToAdd += GetTrackDurationGivenBPM(startTrackWithBPM, data.MeasureScale) * t.Position
+				timeToAdd += GetTrackDurationGivenBPM(startTrackWithBPM, data.MeasureScale) * (t.Position / 100.0)
 			}
 		}
 
 		// If this is the last tempo change, OR current position is GREATER/EQUAL TO current tempo change
 		if (i+1 == len(data.BPMChanges)) || (i+1 < len(data.BPMChanges) && data.BPMChanges[i+1].Position > notePos && notePos >= t.Position) {
-			timeToAdd += GetTrackDurationGivenBPM(t.Bpm, data.MeasureScale) * (notePos - t.Position)
+			timeToAdd += GetTrackDurationGivenBPM(t.Bpm, data.MeasureScale) * ((notePos - t.Position) / 100.0)
 			break
 		} else {
 			// This tempo change happens too early before the note should be placed. Add its range.
-			timeToAdd += GetTrackDurationGivenBPM(t.Bpm, data.MeasureScale) * (data.BPMChanges[i+1].Position - t.Position)
+			timeToAdd += GetTrackDurationGivenBPM(t.Bpm, data.MeasureScale) * ((data.BPMChanges[i+1].Position - t.Position) / 100.0)
 		}
 	}
 	if len(data.BPMChanges) == 0 {
-		timeToAdd += GetTrackDurationGivenBPM(startTrackWithBPM, data.MeasureScale) * notePos
+		timeToAdd += GetTrackDurationGivenBPM(startTrackWithBPM, data.MeasureScale) * (notePos / 100.0)
 	}
 	if len(data.Stops) > 0 {
 		timeToAdd += GetStopOffset(startTrackWithBPM, notePos, *data)

@@ -31,13 +31,13 @@ func (conf *ProgramConfig) ReadBMSFile(inputPath string, bmsFileName string) (*F
 			Artist:     "Unknown artist",
 			Difficulty: "Unknown",
 		},
-		TrackLines:       map[int][]Line{},
-		SoundHexArray:    make([]string, 0),
-		SoundStringArray: make([]string, 0),
-		BPMChangeIndex:   map[string]float64{},
-		StopIndex:        map[string]float64{},
-		BGAIndex:         map[string]string{},
-		StartingBPM:      130.0,
+		TrackLines:     map[int][]Line{},
+		HitObjects:     map[int][]HitObject{},
+		BPMChangeIndex: map[string]float64{},
+		StopIndex:      map[string]float64{},
+		BGAIndex:       map[string]string{},
+		TimingPoints:   map[float64]float64{},
+		StartingBPM:    130.0,
 	}
 
 	// Should be true if the value of #IF n is anything other than 2. Resets at the #END(IF) mark.
@@ -226,14 +226,12 @@ func (conf *ProgramConfig) ReadBMSFile(inputPath string, bmsFileName string) (*F
 				fileData.StartingBPM = i
 			} else if strings.HasPrefix(lineLower, "#bpm") {
 				if len(line) < 8 {
-					color.HiYellow("* BPM change invalid, substituting with 0.0 (Line: %d)", lineIndex)
-					fileData.BPMChangeIndex[lineLower[4:6]] = 0.0
+					color.HiYellow("* BPM change invalid. will be ignored (Line: %d)", lineIndex)
 					continue
 				}
 				i, e := strconv.ParseFloat(line[7:], 64)
 				if e != nil {
-					color.HiYellow("* BPM change is not a number, substituting with 0.0 (Line: %d)", lineIndex)
-					fileData.BPMChangeIndex[lineLower[4:6]] = 0.0
+					color.HiYellow("* BPM change is not a number. will be ignored (Line: %d)", lineIndex)
 					continue
 				}
 				fileData.BPMChangeIndex[lineLower[4:6]] = i
@@ -242,7 +240,7 @@ func (conf *ProgramConfig) ReadBMSFile(inputPath string, bmsFileName string) (*F
 					color.HiYellow("* BMP invalid, ignoring (Line: %d)", lineIndex)
 					continue
 				}
-				exists := FileExists(line[7:])
+				exists := FileExists(path.Join(inputPath, line[7:]))
 				if !exists {
 					color.HiYellow("* \"%s\" wasn't found; ignoring (Line: %d)", line[7:], lineIndex)
 					continue
@@ -290,10 +288,10 @@ func (conf *ProgramConfig) ReadBMSFile(inputPath string, bmsFileName string) (*F
 		}
 		channel := lineLower[4:6]
 
-		if len(mineRegex.FindString(channel)) > 0 {
-			color.HiYellow("* Cannot parse maps with mines/fakes due to often being coupled with per-column SV, which neither quaver or osu support (Line: %d)", lineIndex)
-			return nil, nil
-		}
+		//if len(mineRegex.FindString(channel)) > 0 {
+		//	color.HiYellow("* Cannot parse maps with mines/fakes due to often being coupled with per-column SV, which neither quaver or osu support (Line: %d)", lineIndex)
+		//	return nil, nil
+		//}
 		thisLineData := Line{
 			Channel: channel,
 		}

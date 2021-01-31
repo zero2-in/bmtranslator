@@ -9,8 +9,6 @@ import (
 func (conf *ProgramConfig) ReadTrackData(trackNumber int, lines []Line, bpmChangeIndex map[string]float64, stopIndex map[string]float64) (*LocalTrackData, error) {
 	localTrackData := &LocalTrackData{
 		MeasureScale: 1.0,
-		Stops:        make([]LocalStop, 0),
-		BPMChanges:   make([]LocalBPMChange, 0),
 	}
 
 	for _, line := range lines {
@@ -33,7 +31,7 @@ func (conf *ProgramConfig) ReadTrackData(trackNumber int, lines []Line, bpmChang
 			continue
 		case "08", "03":
 			// If either 08 or 03 has no message,
-			// most implementations choose to read this as 0 bpm.
+			// ignore it.
 			if len(line.Message) == 0 {
 				continue
 			}
@@ -46,14 +44,18 @@ func (conf *ProgramConfig) ReadTrackData(trackNumber int, lines []Line, bpmChang
 					// 03 is used for hexadecimal BPM changes from 1-255.
 					parsedBpm, e := strconv.ParseInt(getHexadecimalPair(i, line.Message), 16, 64)
 					if e != nil {
-						// On error, consider the BPM to be 0.
-						bpm = 0.0
+						// If invalid, don't use it
+						continue
 					} else {
 						bpm = float64(parsedBpm)
 					}
 				} else {
-					// will automatically be 0 (f64) if not found because of the way go works
-					bpm = bpmChangeIndex[getHexadecimalPair(i, line.Message)]
+					// Must be indexed or it is considered invalid
+					if val, ok := bpmChangeIndex[getHexadecimalPair(i, line.Message)]; ok {
+						bpm = val
+					} else {
+						continue
+					}
 				}
 
 				// associate % in track with bpm change

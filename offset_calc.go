@@ -13,11 +13,12 @@ func GetStopOffset(initialBPM float64, pos float64, data LocalTrackData) float64
 		if pos > stop.Position {
 			bpmToUse := initialBPM
 			for i, change := range data.BPMChanges {
-				if (i+1 < len(data.BPMChanges) && data.BPMChanges[i+1].Position > stop.Position && stop.Position >= change.Position) || i+1 == len(data.BPMChanges) {
+				if (i+1 < len(data.BPMChanges) && data.BPMChanges[i+1].Position > stop.Position && stop.Position >= change.Position) || (i+1 == len(data.BPMChanges) && stop.Position >= change.Position) {
 					bpmToUse = change.Bpm
 					break
 				}
 			}
+
 			totalOffset += GetStopDuration(bpmToUse, stop.Duration)
 		}
 	}
@@ -31,9 +32,9 @@ func GetBPMChangeOffset(currentIndex int, data LocalTrackData) float64 {
 		return 0.0
 	}
 	if currentIndex+1 < len(data.BPMChanges) {
-		return GetTrackDurationGivenBPM(data.BPMChanges[currentIndex].Bpm, data.MeasureScale) * (data.BPMChanges[currentIndex+1].Position - data.BPMChanges[currentIndex].Position)
+		return GetTrackDurationGivenBPM(data.BPMChanges[currentIndex].Bpm, data.MeasureScale) * ((data.BPMChanges[currentIndex+1].Position - data.BPMChanges[currentIndex].Position) / 100.0)
 	} else if currentIndex+1 == len(data.BPMChanges) {
-		return GetTrackDurationGivenBPM(data.BPMChanges[currentIndex].Bpm, data.MeasureScale) * ((1.0 - data.BPMChanges[currentIndex].Position) / 1.0)
+		return GetTrackDurationGivenBPM(data.BPMChanges[currentIndex].Bpm, data.MeasureScale) * ((100.0 - data.BPMChanges[currentIndex].Position) / 100.0)
 	}
 	return 0.0
 }
