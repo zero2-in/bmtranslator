@@ -2,11 +2,21 @@ package main
 
 import (
 	"os"
-	"regexp"
 	"strings"
 )
 
+func getHexadecimalPair(i int, str string) string {
+	return str[i*2 : (i*2)+2]
+}
+
+func getFraction(i int, str string) float64 {
+	return 100.0 * (float64(i) / (float64(len(str)) / 2.0))
+}
+
 func GetDifficultyName(i string, sub string) string {
+	if i == "0" {
+		i = "Special"
+	}
 	b := "Lv. " + i
 	if len(sub) == 0 {
 		return b
@@ -36,19 +46,6 @@ func (conf *ProgramConfig) GetCorrespondingHitSound(hitSoundHexArray []string, t
 		}
 	}
 	return nil
-}
-
-func RegSplit(text string, delimeter string) []string {
-	reg := regexp.MustCompile(delimeter)
-	indexes := reg.FindAllStringIndex(text, -1)
-	laststart := 0
-	result := make([]string, len(indexes)+1)
-	for i, element := range indexes {
-		result[i] = text[laststart:element[0]]
-		laststart = element[1]
-	}
-	result[len(indexes)] = text[laststart:]
-	return result
 }
 
 func ClampInt(i int, max int, min int) int {

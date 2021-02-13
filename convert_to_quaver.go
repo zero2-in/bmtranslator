@@ -17,7 +17,12 @@ func ConvertBmsToQua(fileData FileData, outputPath string) error {
 	// flush contents to qua
 	_ = WriteLine(quaFile, "AudioFile: virtual")
 	_ = WriteLine(quaFile, "SongPreviewTime: -1")
-	_ = WriteLine(quaFile, "BackgroundFile: "+fileData.Meta.StageFile)
+	bg := fileData.Meta.StageFile
+	// always prefer banner in the quaver client because of the way song previews are displayed
+	if len(fileData.Meta.Banner) > 0 {
+		bg = fileData.Meta.Banner
+	}
+	_ = WriteLine(quaFile, "BackgroundFile: "+bg)
 	_ = WriteLine(quaFile, "MapId: -1")
 	_ = WriteLine(quaFile, "MapSetId: -1")
 	_ = WriteLine(quaFile, "Mode: Keys7")

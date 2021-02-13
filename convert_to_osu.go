@@ -56,7 +56,11 @@ func (conf *ProgramConfig) ConvertBmsToOsu(fileData FileData, outputPath string)
 	_ = WriteLine(osuFile, "SliderTickRate:1")
 
 	_ = WriteLine(osuFile, "[Events]")
-	_ = WriteLine(osuFile, fmt.Sprintf("0,0,\"%s\",0,0", fileData.Meta.StageFile))
+	bg := fileData.Meta.StageFile
+	if len(fileData.Meta.Banner) > 0 && len(fileData.Meta.StageFile) == 0 {
+		bg = fileData.Meta.Banner
+	}
+	_ = WriteLine(osuFile, fmt.Sprintf("0,0,\"%s\",0,0", bg))
 
 	if !conf.NoStoryboard {
 		for i, bga := range fileData.BackgroundAnimation {

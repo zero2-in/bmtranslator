@@ -11,10 +11,10 @@ import (
 )
 
 var (
-	bracketContentRegex = regexp.MustCompile("(\\[.{2,}?])|(-.{2,}?-)|(<.{2,}?>)|(\\(.{2,}?\\))|(\".{2,}?\")")
+	titleRegex = regexp.MustCompile("\\(([^)]*)\\)|-([^-]*)-|\\[([^]]*)]|'([^']*)'|\"([^\"]*)\"|~([^~]*)~")
 )
 
-func (conf *ProgramConfig) ReadBMSFile(inputPath string, bmsFileName string) (*FileData, error) {
+func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName string) (*FileData, error) {
 	file, err := os.Open(path.Join(inputPath, bmsFileName))
 	if err != nil {
 		return nil, err
@@ -207,7 +207,24 @@ func (conf *ProgramConfig) ReadBMSFile(inputPath string, bmsFileName string) (*F
 					}
 					continue
 				}
+				exists := FileExists(path.Join(inputPath, line[11:]))
+				if !exists {
+					color.HiYellow("* \"%s\" (#stagefile) wasn't found; ignoring (Line: %d)", line[7:], lineIndex)
+				}
 				fileData.Meta.StageFile = line[11:]
+			} else if strings.HasPrefix(lineLower, "#banner") {
+				if len(line) < 9 {
+					if conf.Verbose {
+						color.HiYellow("* #banner is invalid, ignoring (Line: %d)", lineIndex)
+					}
+					continue
+				}
+				exists := FileExists(path.Join(inputPath, line[8:]))
+				if !exists {
+					color.HiYellow("* \"%s\" (#banner) wasn't found; ignoring (Line: %d)", line[7:], lineIndex)
+				}
+
+				fileData.Meta.Banner = line[11:]
 			} else if strings.HasPrefix(lineLower, "#bpm ") {
 				if len(line) < 6 {
 					if conf.Verbose {
@@ -304,17 +321,12 @@ func (conf *ProgramConfig) ReadBMSFile(inputPath string, bmsFileName string) (*F
 
 	// Subtitle wasn't found and user doesn't want to keep implicit subtitles intact. Try
 	// to find the subtitle in the title.
-	// Note that in some cases, maps will have () to denote things like (feat. camellia).
-	// in this case, if these parentheses are the last match in the regex, and there's no subtitle, it will incorrectly specify
-	// the subtitle.
 	if !conf.KeepSubtitles && len(fileData.Meta.Subtitle) == 0 {
-		rs := bracketContentRegex.FindStringSubmatch(fileData.Meta.Title)
-		replacer := strings.NewReplacer("[", "", "]", "", "(", "", ")", "", "-", "", "<", "", ">", "", "\"", "")
-		if len(rs) > 1 {
-			// get the last match
-			fileData.Meta.Subtitle = replacer.Replace(rs[1])
+		rs := titleRegex.FindAllString(fileData.Meta.Title, -1)
+		if len(rs) > 0 {
+			fileData.Meta.Subtitle = rs[len(rs)-1]
+			fileData.Meta.Title = strings.Replace(fileData.Meta.Title, rs[len(rs)-1], "", -1)
 		}
-		fileData.Meta.Title = strings.Join(RegSplit(fileData.Meta.Title, bracketContentRegex.String()), " ")
 	}
 
 	if err := scanner.Err(); err != nil {

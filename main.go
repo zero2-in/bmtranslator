@@ -16,13 +16,6 @@ import (
 	"strings"
 )
 
-type ConversionStatus struct {
-	Name    string
-	Success int
-	Fail    int
-	Skip    bool
-}
-
 func main() {
 	fmt.Print("\n")
 	color.HiBlue("  ___ __  __ _____ ")
@@ -54,13 +47,13 @@ func main() {
 	// Check existence of input & output directory
 	inputExists := FileExists(conf.Input)
 	if !inputExists {
-		color.HiRed("* The input directory does not exist.")
+		color.HiRed("* Input directory does not exist.")
 		return
 	}
 
 	outputExists := FileExists(conf.Output)
 	if !outputExists {
-		color.HiRed("* The output directory does not exist.")
+		color.HiRed("* Output directory does not exist.")
 		return
 	}
 
@@ -208,7 +201,7 @@ func main() {
 			if conf.Verbose {
 				color.HiBlack("* [%d/%d] Converting %s -> %s file type", diffIndex+1, len(bmsChartFiles), bmsFile, fileExtension)
 			}
-			fileData, err := conf.GetFileData(output, bmsFile)
+			fileData, err := conf.ReadFileData(output, bmsFile)
 			if err != nil {
 				conversionStatus[fI].Fail++
 				color.HiRed("* %s wasn't parsed due to an error: %s", bmsFile, err.Error())
@@ -226,7 +219,7 @@ func main() {
 
 			if len(fileData.Meta.StageFile) == 0 && !bgCopied {
 				// Copy BG image
-				bgFile, err := os.OpenFile(path.Join(filepath.FromSlash(conf.Output), TempDir, f.Name(), "bg.png"), os.O_WRONLY|os.O_CREATE, 0777)
+				bgFile, err := os.OpenFile(path.Join(conf.Output, TempDir, f.Name(), "bg.png"), os.O_WRONLY|os.O_CREATE, 0777)
 				if err != nil {
 					color.HiRed("* Failed to open a new file for the background; ignoring (%s)", err.Error())
 				} else {
@@ -258,7 +251,7 @@ func main() {
 
 			if conf.DumpFileData {
 				bmsFileName := strings.TrimSuffix(bmsFile, path.Ext(bmsFile))
-				err = conf.WriteDump(*fileData, path.Join(filepath.FromSlash(conf.Output), f.Name()+"-"+bmsFileName+".txt"), bmsFileName)
+				err = conf.WriteDump(*fileData, path.Join(conf.Output, f.Name()+"-"+bmsFileName+".txt"), bmsFileName)
 				if err != nil && conf.Verbose {
 					color.HiYellow("* failed to write dump for %s: %s (conversion still succeeded)", bmsFile, err.Error())
 				}
@@ -267,7 +260,7 @@ func main() {
 			conversionStatus[fI].Success++
 		}
 
-		if err := RecursiveZip(output, path.Join(filepath.FromSlash(conf.Output), f.Name()+"."+zipExtension)); err != nil {
+		if err := RecursiveZip(output, path.Join(conf.Output, f.Name()+"."+zipExtension)); err != nil {
 			panic(err)
 		}
 
@@ -285,7 +278,7 @@ func main() {
 		color.White("* %s: %d %s and %d %s", s.Name, s.Fail, color.YellowString("not converted"), s.Success, color.HiGreenString("succeeded"))
 	}
 
-	e := os.RemoveAll(path.Join(filepath.FromSlash(conf.Output), TempDir))
+	e := os.RemoveAll(path.Join(conf.Output, TempDir))
 	if e != nil {
 		color.HiRed("* Failed to remove temp dir. %s", e.Error())
 	} else {

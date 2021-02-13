@@ -23,7 +23,8 @@ Output to osu: `bmt.exe -i /path/to/input -o /path/to/output -type osu`
 |  `-v` | No | If this is specified, all logs (including some debug information) will be shown. Useful if you want to know why some maps didn't convert. | N/A |
 |  `-keep-subtitles` | No | If this is specified, [implicit subtitles](https://hitkey.nekokan.dyndns.info/cmds.htm#TITLE-IMPLICIT-SUBTITLE) will NOT be removed from song titles. | N/A |
 |  `-no-storyboard` | No | **osu! only.** If this is specified, background animation frames won't be parsed or inserted into the output files. | N/A |
-|  `-no-measure-lines` | No | If this is specified, timing points will **not** be added at the end of each track to create visible measure lines. (It's a cosmetic thing and doesn't affect gameplay, but it might make slowjam unreadable. Some BMS files will appear unsnapped with timing lines if this is enabled.) | N/A |
+|  `-no-measure-lines` | No | If this is specified, timing points will **not** be added at the end of each track to create visible measure lines. (It's a cosmetic thing and doesn't affect gameplay, but it might make slowjam unreadable. Some BMS files' notes will appear unsnapped if this is enabled.) | N/A |
+|  `-no-timing-points` | No | If this is specified, **no** timing points will be added to the output file. This means no SV changes and is useful for SV maps which don't convert correctly. | N/A |
 |  `-dump-file-data` | No | If this is specified, raw file data will be dumped to a `.txt` file, which is put into the output folder. Each file will contain everything that BMTranslator knew about a BMS file. (Don't enable this unless you know what you're doing) | N/A |
 
 ## Credits
@@ -39,7 +40,8 @@ This tool wouldn't be possible without help from others. Thank you to:
 
 ## Limitations
 
-- `#IF 1` will always be used. All other `#IF` blocks will be ignored.
+- `#IF 1` will always be used. All other `#IF` blocks will be ignored. If an `#IF N` block where `n` is not 1 is never terminated with `#ENDIF`, the rest of the track will not be read.
+- `#SWITCH` blocks can't be parsed (yet). If people want this i'll add it in.
 - Almost no BMS maps use long notes in channels `51-59`, they use `#LNOBJ`. As a result, LNs placed in channels `51-59` are **untested**, but they are implemented. If you find a problem with them, please open an issue.
 - BMS maps that use images as frames for the Background Animation can't be reliably parsed if the frames are <1ms apart, since osu! requires truncation of the decimal.
 - If a BPM change occurs at any point within a STOP command, BMTranslator will still be able to parse the map, but the timing of the rest of the song will most likely be fucked. *However*, this has not appeared in a single map that I've tested, and by this reasoning, I think the only way to do this is by editing a BMS file by hand.

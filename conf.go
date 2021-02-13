@@ -21,6 +21,7 @@ type ProgramConfig struct {
 	NoStoryboard      bool
 	NoMeasureLines    bool
 	DumpFileData      bool
+	NoTimingPoints    bool
 }
 
 func NewProgramConfig() *ProgramConfig {
@@ -33,7 +34,8 @@ func NewProgramConfig() *ProgramConfig {
 	verbose := flag.Bool("v", false, "If true, all logs will be shown.")
 	keepSubtitles := flag.Bool("keep-subtitles", false, "If this is specified, all implicit subtitles will be removed from the title of the map.")
 	noStoryboard := flag.Bool("no-storyboard", false, "If file type is 'osu', and this is specified, background animation elements will be ignored.")
-	noMeasureLines := flag.Bool("no-measure-lines", false, "If this is specified, timing points will NOT added at the end of each track to create visible measure lines. (It's a cosmetic thing and doesn't affect gameplay)")
+	noMeasureLines := flag.Bool("no-measure-lines", false, "If this is specified, timing points will NOT be added at the end of each track to create visible measure lines. (It's a cosmetic thing and doesn't affect gameplay)")
+	noTimingPoints := flag.Bool("no-timing-points", false, "If this is specified then BPM changes will not exist. Helpful for maps whose bpm changes don't load correctly (This is equivalent to no SV)")
 	dumpFileData := flag.Bool("dump-file-data", false, " If this is specified, raw file data will be dumped to a .txt file, which is put into the output folder. Each file will contain everything that BMTranslator knew about a BMS file.")
 
 	// TODO: Implement 5K+1 alignment feature someday
@@ -56,5 +58,6 @@ func NewProgramConfig() *ProgramConfig {
 		NoStoryboard:      *noStoryboard,
 		NoMeasureLines:    *noMeasureLines,
 		DumpFileData:      *dumpFileData,
+		NoTimingPoints:    *noTimingPoints,
 	}
 }

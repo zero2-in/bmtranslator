@@ -10,23 +10,15 @@ import (
 var (
 	//ignore mines....for now.
 	// Quaver might implement this in the future
-	mineRegex        = regexp.MustCompile("[d][1-9]")
+	//mineRegex        = regexp.MustCompile("[d][1-9]")
 	noteRegex        = regexp.MustCompile("[1][1-9]")
 	player2NoteRegex = regexp.MustCompile("[2][1-9]")
 	lnRegex          = regexp.MustCompile("[5][1-z]")
 	player2LnRegex   = regexp.MustCompile("[6][1-9]")
 )
 
-func getHexadecimalPair(i int, str string) string {
-	return str[i*2 : (i*2)+2]
-}
-
-func getFraction(i int, str string) float64 {
-	return 100.0 * (float64(i) / (float64(len(str)) / 2.0))
-}
-
 // Converts from BMS to a ConvertedFile. Returns a ConvertedFile, whether file was skipped or not, and an error if it errored.
-func (conf *ProgramConfig) GetFileData(inputPath string, bmsFileName string) (*FileData, error) {
+func (conf *ProgramConfig) ReadFileData(inputPath string, bmsFileName string) (*FileData, error) {
 
 	// What time (ms) the current track will start at.
 	startTrackAt := 0.0
@@ -39,7 +31,7 @@ func (conf *ProgramConfig) GetFileData(inputPath string, bmsFileName string) (*F
 	longNoteTracker := map[int]float64{}
 	longNoteSoundEffectTracker := map[int]*KeySound{}
 
-	fileData, e := conf.ReadBMSFile(inputPath, bmsFileName)
+	fileData, e := conf.CompileBMSToStruct(inputPath, bmsFileName)
 	if e != nil {
 		return nil, e
 	}
@@ -120,7 +112,8 @@ func (conf *ProgramConfig) GetFileData(inputPath string, bmsFileName string) (*F
 						//	// That means the previous value is a LN object, so we don't add a new one.
 						//	continue
 						//}
-						if fileData.HitObjects[laneInt][back].StartTime >= hitObject.StartTime {
+						// If the LN is too short don't actually use it.
+						if hitObject.StartTime-fileData.HitObjects[laneInt][back].StartTime < 2.0 {
 							continue
 						}
 						fileData.HitObjects[laneInt][back].IsLongNote = true
@@ -197,11 +190,12 @@ func (conf *ProgramConfig) GetFileData(inputPath string, bmsFileName string) (*F
 		// Get the full length of the track.
 		fullLengthOfTrack := GetTotalTrackDuration(startTrackWithBPM, *localTrackData)
 		// Calculate all timing points.
-		timingPoints := CalculateTimingPoints(startTrackAt, startTrackWithBPM, *localTrackData)
-		for k, v := range timingPoints {
-			fileData.TimingPoints[k] = v
+		if !conf.NoTimingPoints {
+			timingPoints := CalculateTimingPoints(startTrackAt, startTrackWithBPM, *localTrackData)
+			for k, v := range timingPoints {
+				fileData.TimingPoints[k] = v
+			}
 		}
-
 		if len(localTrackData.BPMChanges) > 0 {
 			startTrackWithBPM = localTrackData.BPMChanges[len(localTrackData.BPMChanges)-1].Bpm
 		}
@@ -209,7 +203,7 @@ func (conf *ProgramConfig) GetFileData(inputPath string, bmsFileName string) (*F
 		// Add the length of the track onto the current time.
 		startTrackAt += fullLengthOfTrack
 
-		if !conf.NoMeasureLines {
+		if !conf.NoMeasureLines && !conf.NoTimingPoints {
 			fileData.TimingPoints[startTrackAt] = startTrackWithBPM
 		}
 	}

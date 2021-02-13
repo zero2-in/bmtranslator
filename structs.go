@@ -38,6 +38,7 @@ type BMSMetadata struct {
 	StageFile  string
 	Subtitle   string
 	Subartists []string
+	Banner     string
 }
 
 type SoundEffect struct {
@@ -78,4 +79,11 @@ type LocalTrackData struct {
 	MeasureScale float64
 	BPMChanges   []LocalBPMChange
 	Stops        []LocalStop
+}
+
+type ConversionStatus struct {
+	Name    string
+	Success int
+	Fail    int
+	Skip    bool
 }
