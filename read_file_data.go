@@ -83,80 +83,84 @@ func (conf *ProgramConfig) ReadFileData(inputPath string, bmsFileName string) (*
 				}
 				localOffset := GetOffsetFromStartingTime(localTrackData, i, line.Message, startTrackWithBPM)
 				sfx := conf.GetCorrespondingHitSound(fileData.SoundHexArray, target)
+				laneInt := strings.Index(Base36Range, line.Channel[1:])
+				// maybe you should get among some bitches
 				if noteRegex.MatchString(line.Channel) || lnRegex.MatchString(line.Channel) {
-					laneInt := strings.Index(Base36Range, line.Channel[1:])
-					if laneInt == 6 {
-						// Uses the channel for the scratch lane, manually adjust to lane 8
-						laneInt = 8
-					} else if laneInt >= 8 {
-						// Compensate for notes past 8th key (6th and 7th lane)
-						laneInt -= 2
-					}
-					if laneInt > 8 {
-						color.HiRed("* File wants more than 8 keys, skipping")
-						return nil, nil
-					}
-					hitObject := HitObject{
-						StartTime: startTrackAt + localOffset,
-					}
+					if (laneInt == 6 && !conf.NoScratchLane) || laneInt != 6 {
+						if laneInt == 6 {
 
-					// Closes the long note
-					if target == fileData.LnObject {
-						if len(fileData.HitObjects[laneInt]) == 0 {
-							// Why is there an LN tail as the first object??
-							continue
+							// Uses the channel for the scratch lane, manually adjust to lane 8
+							laneInt = 8
+						} else if laneInt >= 8 {
+							// Compensate for notes past 8th key (6th and 7th lane)
+							laneInt -= 2
 						}
-						back := len(fileData.HitObjects[laneInt]) - 1
-						//if fileData.HitObjects[back].KeySounds == nil {
-						//	// Previous hit object didn't have key sounds.
-						//	// That means the previous value is a LN object, so we don't add a new one.
-						//	continue
-						//}
-						// If the LN is too short don't actually use it.
-						if hitObject.StartTime-fileData.HitObjects[laneInt][back].StartTime < 2.0 {
-							continue
+						if laneInt > 8 {
+							color.HiRed("* File wants more than 8 keys, skipping")
+							return nil, nil
 						}
-						fileData.HitObjects[laneInt][back].IsLongNote = true
-						fileData.HitObjects[laneInt][back].EndTime = hitObject.StartTime
-						continue
-					}
-					if sfx != nil {
-						hitObject.KeySounds = sfx
-					}
+						hitObject := HitObject{
+							StartTime: startTrackAt + localOffset,
+						}
 
-					// This is a long note existing in channels 51-59. We save it to a map storing these values.
-					if lnRegex.MatchString(line.Channel) {
-						// This is the end of a long note. Now, we can place the note.
-						if longNoteTracker[laneInt] != 0.0 {
-							// haha funny end time joke
-							hitObject.EndTime = hitObject.StartTime
-							hitObject.StartTime = longNoteTracker[laneInt]
-							hitObject.IsLongNote = true
-							if longNoteSoundEffectTracker[laneInt] != nil {
-								hitObject.KeySounds = &KeySound{
-									Sample: longNoteSoundEffectTracker[laneInt].Sample,
-									Volume: longNoteSoundEffectTracker[laneInt].Volume,
-								}
-							}
-							// Reset values
-							longNoteTracker[laneInt] = 0.0
-							longNoteSoundEffectTracker[laneInt] = nil
-							// Invalid long note because it ends either before or exactly at the position it ends.
-							// In other words, do not process it.
-							if hitObject.EndTime <= hitObject.StartTime {
+						// Closes the long note
+						if target == fileData.LnObject {
+							if len(fileData.HitObjects[laneInt]) == 0 {
+								// Why is there an LN tail as the first object??
 								continue
 							}
-						} else {
-							// This is the head of a long note, so we store its start time and key sounds for later.
-							longNoteTracker[laneInt] = hitObject.StartTime
-							longNoteSoundEffectTracker[laneInt] = hitObject.KeySounds
+							back := len(fileData.HitObjects[laneInt]) - 1
+							//if fileData.HitObjects[back].KeySounds == nil {
+							//	// Previous hit object didn't have key sounds.
+							//	// That means the previous value is a LN object, so we don't add a new one.
+							//	continue
+							//}
+							// If the LN is too short don't actually use it.
+							if hitObject.StartTime-fileData.HitObjects[laneInt][back].StartTime < 2.0 {
+								continue
+							}
+							fileData.HitObjects[laneInt][back].IsLongNote = true
+							fileData.HitObjects[laneInt][back].EndTime = hitObject.StartTime
 							continue
 						}
+						if sfx != nil {
+							hitObject.KeySounds = sfx
+						}
+
+						// This is a long note existing in channels 51-59. We save it to a map storing these values.
+						if lnRegex.MatchString(line.Channel) {
+							// This is the end of a long note. Now, we can place the note.
+							if longNoteTracker[laneInt] != 0.0 {
+								// haha funny end time joke
+								hitObject.EndTime = hitObject.StartTime
+								hitObject.StartTime = longNoteTracker[laneInt]
+								hitObject.IsLongNote = true
+								if longNoteSoundEffectTracker[laneInt] != nil {
+									hitObject.KeySounds = &KeySound{
+										Sample: longNoteSoundEffectTracker[laneInt].Sample,
+										Volume: longNoteSoundEffectTracker[laneInt].Volume,
+									}
+								}
+								// Reset values
+								longNoteTracker[laneInt] = 0.0
+								longNoteSoundEffectTracker[laneInt] = nil
+								// Invalid long note because it ends either before or exactly at the position it ends.
+								// In other words, do not process it.
+								if hitObject.EndTime <= hitObject.StartTime {
+									continue
+								}
+							} else {
+								// This is the head of a long note, so we store its start time and key sounds for later.
+								longNoteTracker[laneInt] = hitObject.StartTime
+								longNoteSoundEffectTracker[laneInt] = hitObject.KeySounds
+								continue
+							}
+						}
+						fileData.HitObjects[laneInt] = append(fileData.HitObjects[laneInt], hitObject)
+						continue
 					}
-					fileData.HitObjects[laneInt] = append(fileData.HitObjects[laneInt], hitObject)
-					continue
 				}
-				if line.Channel == "01" {
+				if line.Channel == "01" || laneInt == 6 && conf.NoScratchLane {
 					// Sound effect (channel 01)
 					soundEffect := SoundEffect{
 						StartTime: startTrackAt + localOffset,

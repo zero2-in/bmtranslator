@@ -21,7 +21,8 @@ Output to osu: `bmt.exe -i /path/to/input -o /path/to/output -type osu`
 |  `-hp` | Yes | **osu! only.** Specify the HP drain rate. (0.0-10.0) | 8.5 |
 |  `-od` | Yes | **osu! only.** Specify the overall difficulty. (0.0-10.0) | 8.0 |
 |  `-v` | No | If this is specified, all logs (including some debug information) will be shown. Useful if you want to know why some maps didn't convert. | N/A |
-|  `-keep-subtitles` | No | If this is specified, [implicit subtitles](https://hitkey.nekokan.dyndns.info/cmds.htm#TITLE-IMPLICIT-SUBTITLE) will NOT be removed from song titles. | N/A |
+|  `-auto-scratch` | No | If this is specified, all notes in the scratch lane will be replaced with sound effects instead, and the scratch lane will not be shown in all clients.
+|  `-keep-subtitles` | No | If this is specified, [implicit subtitles](https://hitkey.nekokan.dyndns.info/cmds.htm#TITLE-IMPLICIT-SUBTITLE) will **not** be removed from song titles. | N/A |
 |  `-no-storyboard` | No | **osu! only.** If this is specified, background animation frames won't be parsed or inserted into the output files. | N/A |
 |  `-no-measure-lines` | No | If this is specified, timing points will **not** be added at the end of each track to create visible measure lines. (It's a cosmetic thing and doesn't affect gameplay, but it might make slowjam unreadable. Some BMS files' notes will appear unsnapped if this is enabled.) | N/A |
 |  `-no-timing-points` | No | If this is specified, **no** timing points will be added to the output file. This means no SV changes and is useful for SV maps which don't convert correctly. | N/A |

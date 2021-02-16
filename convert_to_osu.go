@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	OsuYPos = 192
+	OsuYPos               = 192
+	OsuManiaPlayfieldSize = 512.0
 )
 
 // Convert a BMS file to .osu (for the game osu!).
@@ -26,7 +27,9 @@ func (conf *ProgramConfig) ConvertBmsToOsu(fileData FileData, outputPath string)
 	_ = WriteLine(osuFile, "[General]")
 	_ = WriteLine(osuFile, "Mode: 3")
 	_ = WriteLine(osuFile, "SampleSet: Soft")
-	_ = WriteLine(osuFile, "SpecialStyle: 1")
+	if !conf.NoScratchLane {
+		_ = WriteLine(osuFile, "SpecialStyle: 1")
+	}
 	_ = WriteLine(osuFile, "Countdown: 0")
 
 	_ = WriteLine(osuFile, "[Editor]")
@@ -43,13 +46,17 @@ func (conf *ProgramConfig) ConvertBmsToOsu(fileData FileData, outputPath string)
 	_ = WriteLine(osuFile, fmt.Sprintf("Creator:%s", AppendSubartistsToArtist(fileData.Meta.Artist, fileData.Meta.Subartists)))
 	_ = WriteLine(osuFile, "Source:BMS")
 	_ = WriteLine(osuFile, fmt.Sprintf("Tags:%s", fileData.Meta.Tags))
-	_ = WriteLine(osuFile, fmt.Sprintf("Version:%s", GetDifficultyName(fileData.Meta.Difficulty, fileData.Meta.Subtitle)))
+	_ = WriteLine(osuFile, fmt.Sprintf("Version:%s", GetDifficultyName(fileData.Meta.Difficulty, fileData.Meta.Subtitle, conf.NoScratchLane)))
 	_ = WriteLine(osuFile, "BeatmapID:0")
 	_ = WriteLine(osuFile, "BeatmapSetID:0")
 
 	_ = WriteLine(osuFile, "[Difficulty]")
 	_ = WriteLine(osuFile, fmt.Sprintf("HPDrainRate:%.1f", conf.HPDrain))
-	_ = WriteLine(osuFile, "CircleSize:8")
+	cs := 8
+	if conf.NoScratchLane {
+		cs = 7
+	}
+	_ = WriteLine(osuFile, fmt.Sprintf("CircleSize:%d", cs))
 	_ = WriteLine(osuFile, fmt.Sprintf("OverallDifficulty:%.1f", conf.OverallDifficulty))
 	_ = WriteLine(osuFile, "ApproachRate:0")
 	_ = WriteLine(osuFile, "SliderMultiplier:1")
@@ -116,26 +123,41 @@ func (conf *ProgramConfig) ConvertBmsToOsu(fileData FileData, outputPath string)
 		i++
 	}
 
+	laneCt := 8.0
+	if conf.NoScratchLane {
+		laneCt = 7.0
+	}
+	laneSize := OsuManiaPlayfieldSize / laneCt
+
 	_ = WriteLine(osuFile, "[HitObjects]")
 	for lane, objects := range fileData.HitObjects {
+		if lane == 8 && conf.NoScratchLane {
+			continue
+		}
 		for _, obj := range objects {
 			objType := 1 << 0
 			if obj.IsLongNote {
 				objType = 1 << 7
 			}
-			xPos := 64 * lane
-			if lane == 8 {
-				xPos = 32
+			xPos := laneSize * float64(lane)
+
+			if !conf.NoScratchLane {
+				if lane == 8 {
+					xPos = laneSize / 2.0
+				} else {
+					xPos += laneSize / 2.0
+				}
 			} else {
-				xPos += 32
+				xPos -= laneSize / 2.0
 			}
+
 			var hitSound string
 			if obj.KeySounds != nil {
 				hitSound = fileData.SoundStringArray[obj.KeySounds.Sample-1]
 			}
 			if objType == 1<<7 && int(obj.EndTime) > int(obj.StartTime) {
 				_ = WriteLine(osuFile, fmt.Sprintf("%d,%d,%d,%d,%d,%d:0:0:0:0:%s",
-					xPos,
+					int(math.Floor(xPos)),
 					OsuYPos,
 					int(obj.StartTime),
 					objType,
@@ -145,7 +167,7 @@ func (conf *ProgramConfig) ConvertBmsToOsu(fileData FileData, outputPath string)
 				))
 			} else {
 				_ = WriteLine(osuFile, fmt.Sprintf("%d,%d,%d,%d,%d,0:0:0:0:%s",
-					xPos,
+					int(math.Floor(xPos)),
 					OsuYPos,
 					int(obj.StartTime),
 					1<<0,

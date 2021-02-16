@@ -13,11 +13,14 @@ func getFraction(i int, str string) float64 {
 	return 100.0 * (float64(i) / (float64(len(str)) / 2.0))
 }
 
-func GetDifficultyName(i string, sub string) string {
+func GetDifficultyName(i string, sub string, autoScratch bool) string {
 	if i == "0" {
 		i = "Special"
 	}
 	b := "Lv. " + i
+	if autoScratch {
+		b = "[Auto Scratch] Lv. " + i
+	}
 	if len(sub) == 0 {
 		return b
 	}

@@ -241,7 +241,7 @@ func main() {
 				err = conf.ConvertBmsToOsu(*fileData, writeTo)
 				break
 			default:
-				err = ConvertBmsToQua(*fileData, writeTo)
+				err = conf.ConvertBmsToQua(*fileData, writeTo)
 			}
 			if err != nil {
 				conversionStatus[fI].Fail++

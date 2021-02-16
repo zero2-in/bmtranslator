@@ -22,17 +22,19 @@ type ProgramConfig struct {
 	NoMeasureLines    bool
 	DumpFileData      bool
 	NoTimingPoints    bool
+	NoScratchLane     bool
 }
 
 func NewProgramConfig() *ProgramConfig {
 	i := flag.String("i", "-", "Input folder containing BMS FOLDERS, NOT zip files!")
 	o := flag.String("o", "-", "Which folder you want the ending .qua files to be output to")
-	vol := flag.Int("vol", 100, "How loud the key sounds should be (0-100 is acceptable)")
+	vol := flag.Int("vol", 100, "How loud the key sounds should be (0-100 is acceptable, 100 default)")
 	fileTypeWanted := flag.String("type", "quaver", "Which file type to use. (quaver | osu)")
-	hp := flag.Float64("hp", 8.5, "If file type is 'osu', the HP drain (0-10)")
-	od := flag.Float64("od", 8.0, "If file type is 'osu', the overall difficulty (0-10)")
-	verbose := flag.Bool("v", false, "If true, all logs will be shown.")
+	hp := flag.Float64("hp", 8.5, "If file type is 'osu', the HP drain (0-10, 8.5 default)")
+	od := flag.Float64("od", 8.0, "If file type is 'osu', the overall difficulty (0-10, 8 default)")
+	verbose := flag.Bool("v", false, "If specified, all logs will be shown.")
 	keepSubtitles := flag.Bool("keep-subtitles", false, "If this is specified, all implicit subtitles will be removed from the title of the map.")
+	noScratch := flag.Bool("auto-scratch", false, " If this is specified, all notes in the scratch lane will be replaced with sound effects instead, and the scratch lane will not be used.")
 	noStoryboard := flag.Bool("no-storyboard", false, "If file type is 'osu', and this is specified, background animation elements will be ignored.")
 	noMeasureLines := flag.Bool("no-measure-lines", false, "If this is specified, timing points will NOT be added at the end of each track to create visible measure lines. (It's a cosmetic thing and doesn't affect gameplay)")
 	noTimingPoints := flag.Bool("no-timing-points", false, "If this is specified then BPM changes will not exist. Helpful for maps whose bpm changes don't load correctly (This is equivalent to no SV)")
@@ -59,5 +61,6 @@ func NewProgramConfig() *ProgramConfig {
 		NoMeasureLines:    *noMeasureLines,
 		DumpFileData:      *dumpFileData,
 		NoTimingPoints:    *noTimingPoints,
+		NoScratchLane:     *noScratch,
 	}
 }

@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-func ConvertBmsToQua(fileData FileData, outputPath string) error {
+func (conf *ProgramConfig) ConvertBmsToQua(fileData FileData, outputPath string) error {
 	quaFile, e := os.Create(outputPath)
 	if e != nil {
 		return e
@@ -26,13 +26,17 @@ func ConvertBmsToQua(fileData FileData, outputPath string) error {
 	_ = WriteLine(quaFile, "MapId: -1")
 	_ = WriteLine(quaFile, "MapSetId: -1")
 	_ = WriteLine(quaFile, "Mode: Keys7")
-	_ = WriteLine(quaFile, "HasScratchKey: True")
+	scratchKey := "True"
+	if conf.NoScratchLane {
+		scratchKey = "False"
+	}
+	_ = WriteLine(quaFile, fmt.Sprintf("HasScratchKey:%s", scratchKey))
 	_ = WriteLine(quaFile, fmt.Sprintf("Title: '%s'", fileData.Meta.Title))
 	_ = WriteLine(quaFile, fmt.Sprintf("Artist: '%s'", fileData.Meta.Artist))
 	_ = WriteLine(quaFile, "Source: BMS")
 	_ = WriteLine(quaFile, fmt.Sprintf("Tags: '%s'", fileData.Meta.Tags))
 	_ = WriteLine(quaFile, fmt.Sprintf("Creator: '%s'", AppendSubartistsToArtist(fileData.Meta.Artist, fileData.Meta.Subartists)))
-	_ = WriteLine(quaFile, fmt.Sprintf("DifficultyName: '%s'", GetDifficultyName(fileData.Meta.Difficulty, fileData.Meta.Subtitle)))
+	_ = WriteLine(quaFile, fmt.Sprintf("DifficultyName: '%s'", GetDifficultyName(fileData.Meta.Difficulty, fileData.Meta.Subtitle, conf.NoScratchLane)))
 	_ = WriteLine(quaFile, "Description: Converted from BMS")
 	_ = WriteLine(quaFile, "EditorLayers: []")
 	// Process Hit Sound Paths
@@ -67,6 +71,9 @@ func ConvertBmsToQua(fileData FileData, outputPath string) error {
 	// Process Hit Objects
 	_ = WriteLine(quaFile, "HitObjects:")
 	for lane, objects := range fileData.HitObjects {
+		if lane == 8 && conf.NoScratchLane {
+			continue
+		}
 		for _, obj := range objects {
 			_ = WriteLine(quaFile, "- StartTime: "+strconv.Itoa(int(obj.StartTime)))
 			_ = WriteLine(quaFile, "  Lane: "+strconv.Itoa(lane))
