@@ -1,6 +1,6 @@
 package main
 
-// Gets the total amount of time that all STOP before the current time would cause.
+// GetStopOffset gets the total amount of time that all STOP before the current time would cause.
 func GetStopOffset(initialBPM float64, pos float64, data LocalTrackData) float64 {
 	totalOffset := 0.0
 

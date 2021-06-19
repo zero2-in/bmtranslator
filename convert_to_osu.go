@@ -13,7 +13,7 @@ const (
 	OsuManiaPlayfieldSize = 512.0
 )
 
-// Convert a BMS file to .osu (for the game osu!).
+// ConvertBmsToOsu converts a BMS file to .osu (for the game osu!).
 func (conf *ProgramConfig) ConvertBmsToOsu(fileData FileData, outputPath string) error {
 	osuFile, e := os.Create(outputPath)
 	if e != nil {
@@ -39,14 +39,14 @@ func (conf *ProgramConfig) ConvertBmsToOsu(fileData FileData, outputPath string)
 	_ = WriteLine(osuFile, "TimelineZoom: 1")
 
 	_ = WriteLine(osuFile, "[Metadata]")
-	_ = WriteLine(osuFile, fmt.Sprintf("Title:%s", fileData.Meta.Title))
-	_ = WriteLine(osuFile, fmt.Sprintf("Artist:%s", fileData.Meta.Artist))
-	_ = WriteLine(osuFile, fmt.Sprintf("TitleUnicode:%s", fileData.Meta.Title))
-	_ = WriteLine(osuFile, fmt.Sprintf("ArtistUnicode:%s", fileData.Meta.Artist))
-	_ = WriteLine(osuFile, fmt.Sprintf("Creator:%s", AppendSubartistsToArtist(fileData.Meta.Artist, fileData.Meta.Subartists)))
+	_ = WriteLine(osuFile, fmt.Sprintf("Title:%s", fileData.Metadata.Title))
+	_ = WriteLine(osuFile, fmt.Sprintf("Artist:%s", fileData.Metadata.Artist))
+	_ = WriteLine(osuFile, fmt.Sprintf("TitleUnicode:%s", fileData.Metadata.Title))
+	_ = WriteLine(osuFile, fmt.Sprintf("ArtistUnicode:%s", fileData.Metadata.Artist))
+	_ = WriteLine(osuFile, fmt.Sprintf("Creator:%s", AppendSubartistsToArtist(fileData.Metadata.Artist, fileData.Metadata.Subartists)))
 	_ = WriteLine(osuFile, "Source:BMS")
-	_ = WriteLine(osuFile, fmt.Sprintf("Tags:%s", fileData.Meta.Tags))
-	_ = WriteLine(osuFile, fmt.Sprintf("Version:%s", GetDifficultyName(fileData.Meta.Difficulty, fileData.Meta.Subtitle, conf.NoScratchLane)))
+	_ = WriteLine(osuFile, fmt.Sprintf("Tags:%s", fileData.Metadata.Tags))
+	_ = WriteLine(osuFile, fmt.Sprintf("Version:%s", GetDifficultyName(fileData.Metadata.Difficulty, fileData.Metadata.Subtitle, conf.NoScratchLane)))
 	_ = WriteLine(osuFile, "BeatmapID:0")
 	_ = WriteLine(osuFile, "BeatmapSetID:0")
 
@@ -63,11 +63,13 @@ func (conf *ProgramConfig) ConvertBmsToOsu(fileData FileData, outputPath string)
 	_ = WriteLine(osuFile, "SliderTickRate:1")
 
 	_ = WriteLine(osuFile, "[Events]")
-	bg := fileData.Meta.StageFile
-	if len(fileData.Meta.Banner) > 0 && len(fileData.Meta.StageFile) == 0 {
-		bg = fileData.Meta.Banner
+	bg := fileData.Metadata.StageFile
+	if len(fileData.Metadata.Banner) > 0 && len(fileData.Metadata.StageFile) == 0 {
+		bg = fileData.Metadata.Banner
 	}
-	_ = WriteLine(osuFile, fmt.Sprintf("0,0,\"%s\",0,0", bg))
+	if len(bg) != 0 {
+		_ = WriteLine(osuFile, fmt.Sprintf("0,0,\"%s\",0,0", bg))
+	}
 
 	if !conf.NoStoryboard {
 		for i, bga := range fileData.BackgroundAnimation {

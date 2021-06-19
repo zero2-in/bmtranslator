@@ -1,5 +1,6 @@
 package main
 
+// CalculateTimingPoints aggregates all timing points for this section of the track.
 func CalculateTimingPoints(currentTime float64, startTrackWithBPM float64, data LocalTrackData) map[float64]float64 {
 	// Create local points (k: time, v: bpm)
 	points := map[float64]float64{}

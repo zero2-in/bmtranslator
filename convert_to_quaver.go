@@ -17,12 +17,14 @@ func (conf *ProgramConfig) ConvertBmsToQua(fileData FileData, outputPath string)
 	// flush contents to qua
 	_ = WriteLine(quaFile, "AudioFile: virtual")
 	_ = WriteLine(quaFile, "SongPreviewTime: -1")
-	bg := fileData.Meta.StageFile
+	bg := fileData.Metadata.StageFile
 	// always prefer banner in the quaver client because of the way song previews are displayed
-	if len(fileData.Meta.Banner) > 0 {
-		bg = fileData.Meta.Banner
+	if len(fileData.Metadata.Banner) > 0 {
+		bg = fileData.Metadata.Banner
 	}
-	_ = WriteLine(quaFile, "BackgroundFile: "+bg)
+	if len(bg) != 0 {
+		_ = WriteLine(quaFile, "BackgroundFile: "+bg)
+	}
 	_ = WriteLine(quaFile, "MapId: -1")
 	_ = WriteLine(quaFile, "MapSetId: -1")
 	_ = WriteLine(quaFile, "Mode: Keys7")
@@ -31,12 +33,12 @@ func (conf *ProgramConfig) ConvertBmsToQua(fileData FileData, outputPath string)
 		scratchKey = "False"
 	}
 	_ = WriteLine(quaFile, fmt.Sprintf("HasScratchKey:%s", scratchKey))
-	_ = WriteLine(quaFile, fmt.Sprintf("Title: '%s'", fileData.Meta.Title))
-	_ = WriteLine(quaFile, fmt.Sprintf("Artist: '%s'", fileData.Meta.Artist))
+	_ = WriteLine(quaFile, fmt.Sprintf("Title: '%s'", fileData.Metadata.Title))
+	_ = WriteLine(quaFile, fmt.Sprintf("Artist: '%s'", fileData.Metadata.Artist))
 	_ = WriteLine(quaFile, "Source: BMS")
-	_ = WriteLine(quaFile, fmt.Sprintf("Tags: '%s'", fileData.Meta.Tags))
-	_ = WriteLine(quaFile, fmt.Sprintf("Creator: '%s'", AppendSubartistsToArtist(fileData.Meta.Artist, fileData.Meta.Subartists)))
-	_ = WriteLine(quaFile, fmt.Sprintf("DifficultyName: '%s'", GetDifficultyName(fileData.Meta.Difficulty, fileData.Meta.Subtitle, conf.NoScratchLane)))
+	_ = WriteLine(quaFile, fmt.Sprintf("Tags: '%s'", fileData.Metadata.Tags))
+	_ = WriteLine(quaFile, fmt.Sprintf("Creator: '%s'", AppendSubartistsToArtist(fileData.Metadata.Artist, fileData.Metadata.Subartists)))
+	_ = WriteLine(quaFile, fmt.Sprintf("DifficultyName: '%s'", GetDifficultyName(fileData.Metadata.Difficulty, fileData.Metadata.Subtitle, conf.NoScratchLane)))
 	_ = WriteLine(quaFile, "Description: Converted from BMS")
 	_ = WriteLine(quaFile, "EditorLayers: []")
 	// Process Hit Sound Paths
@@ -66,7 +68,7 @@ func (conf *ProgramConfig) ConvertBmsToQua(fileData FileData, outputPath string)
 		_ = WriteLine(quaFile, fmt.Sprintf("  Bpm: %f", fileData.TimingPoints[k]))
 	}
 
-	// Process Slider Velocities
+	// Process Slider Velocities (joke)
 	_ = WriteLine(quaFile, "SliderVelocities: []")
 	// Process Hit Objects
 	_ = WriteLine(quaFile, "HitObjects:")

@@ -26,10 +26,10 @@ func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName stri
 	scanner.Buffer(buf, 1024*1024)
 
 	fileData := &FileData{
-		Meta: BMSMetadata{
+		Metadata: BMSMetadata{
 			Title:      "No title",
 			Artist:     "Unknown artist",
-			Difficulty: "Unknown",
+			Difficulty: "?",
 		},
 		TrackLines:     map[int][]Line{},
 		HitObjects:     map[int][]HitObject{},
@@ -107,7 +107,7 @@ func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName stri
 					if conf.Verbose {
 						color.HiYellow("* #genre is invalid, ignoring (Line: %d)", lineIndex)
 					}
-					fileData.Meta.Tags = "BMS"
+					fileData.Metadata.Tags = "BMS"
 					continue
 				}
 				lineBytes := []byte(line[7:])
@@ -117,7 +117,7 @@ func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName stri
 						color.HiYellow("* #genre couldn't be converted via ShiftJIS (Line: %d)", lineIndex)
 					}
 				}
-				fileData.Meta.Tags = strings.Replace(b, "'", "\\'", -1)
+				fileData.Metadata.Tags = strings.Replace(b, "'", "\\'", -1)
 			} else if strings.HasPrefix(lineLower, "#subtitle") {
 				if len(line) < 11 {
 					if conf.Verbose {
@@ -132,7 +132,7 @@ func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName stri
 						color.HiYellow("* #subtitle couldn't be converted via ShiftJIS (Line: %d)", lineIndex)
 					}
 				}
-				fileData.Meta.Subtitle = strings.Replace(b, "'", "\\'", -1)
+				fileData.Metadata.Subtitle = strings.Replace(b, "'", "\\'", -1)
 			} else if strings.HasPrefix(lineLower, "#subartist") {
 				if len(line) < 12 {
 					if conf.Verbose {
@@ -147,7 +147,7 @@ func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName stri
 						color.HiYellow("* #subartist couldn't be converted via ShiftJIS (Line: %d)", lineIndex)
 					}
 				}
-				fileData.Meta.Subartists = append(fileData.Meta.Subartists, strings.Replace(b, "'", "\\'", -1))
+				fileData.Metadata.Subartists = append(fileData.Metadata.Subartists, strings.Replace(b, "'", "\\'", -1))
 			} else if strings.HasPrefix(lineLower, "#title") {
 				if len(line) < 8 {
 					if conf.Verbose {
@@ -162,7 +162,7 @@ func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName stri
 						color.HiYellow("* #title couldn't be converted via ShiftJIS (Line: %d)", lineIndex)
 					}
 				}
-				fileData.Meta.Title = strings.Replace(b, "'", "\\'", -1)
+				fileData.Metadata.Title = strings.Replace(b, "'", "\\'", -1)
 			} else if strings.HasPrefix(lineLower, "#lnobj") {
 				if len(line) < 8 {
 					if conf.Verbose {
@@ -191,7 +191,7 @@ func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName stri
 						color.HiYellow("* #artist couldn't be converted via ShiftJIS (Line: %d)", lineIndex)
 					}
 				}
-				fileData.Meta.Artist = strings.Replace(b, "'", "\\'", -1)
+				fileData.Metadata.Artist = strings.Replace(b, "'", "\\'", -1)
 			} else if strings.HasPrefix(lineLower, "#playlevel") {
 				if len(line) < 12 {
 					if conf.Verbose {
@@ -199,7 +199,7 @@ func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName stri
 					}
 					continue
 				}
-				fileData.Meta.Difficulty = line[11:]
+				fileData.Metadata.Difficulty = line[11:]
 			} else if strings.HasPrefix(lineLower, "#stagefile") {
 				if len(line) < 12 {
 					if conf.Verbose {
@@ -211,7 +211,7 @@ func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName stri
 				if !exists {
 					color.HiYellow("* \"%s\" (#stagefile) wasn't found; ignoring (Line: %d)", line[7:], lineIndex)
 				}
-				fileData.Meta.StageFile = line[11:]
+				fileData.Metadata.StageFile = line[11:]
 			} else if strings.HasPrefix(lineLower, "#banner") {
 				if len(line) < 9 {
 					if conf.Verbose {
@@ -221,10 +221,10 @@ func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName stri
 				}
 				exists := FileExists(path.Join(inputPath, line[8:]))
 				if !exists {
-					color.HiYellow("* \"%s\" (#banner) wasn't found; ignoring (Line: %d)", line[7:], lineIndex)
+					color.HiYellow("* \"%s\" (#banner) wasn't found; ignoring (Line: %d)", line[8:], lineIndex)
 				}
 
-				fileData.Meta.Banner = line[11:]
+				fileData.Metadata.Banner = line[11:]
 			} else if strings.HasPrefix(lineLower, "#bpm ") {
 				if len(line) < 6 {
 					if conf.Verbose {
@@ -321,11 +321,11 @@ func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName stri
 
 	// Subtitle wasn't found and user doesn't want to keep implicit subtitles intact. Try
 	// to find the subtitle in the title.
-	if !conf.KeepSubtitles && len(fileData.Meta.Subtitle) == 0 {
-		rs := titleRegex.FindAllString(fileData.Meta.Title, -1)
+	if !conf.KeepSubtitles && len(fileData.Metadata.Subtitle) == 0 {
+		rs := titleRegex.FindAllString(fileData.Metadata.Title, -1)
 		if len(rs) > 0 {
-			fileData.Meta.Subtitle = rs[len(rs)-1]
-			fileData.Meta.Title = strings.Replace(fileData.Meta.Title, rs[len(rs)-1], "", -1)
+			fileData.Metadata.Subtitle = rs[len(rs)-1]
+			fileData.Metadata.Title = strings.Replace(fileData.Metadata.Title, rs[len(rs)-1], "", -1)
 		}
 	}
 

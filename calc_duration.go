@@ -12,7 +12,8 @@ func getBaseTrackDuration(currentBPM float64) float64 {
 	return GetBeatDuration(currentBPM) * 4.0
 }
 
-// floating point hell
+// GetStopDuration gets the duration that the track should remain at 0 BPM for, based on the current BPM, and the duration. STOP commands
+// are based on 1/192 of a whole note in 4/4.
 func GetStopDuration(currentBPM float64, duration float64) float64 {
 	return getBaseTrackDuration(currentBPM) * (duration / 192.0)
 }
@@ -21,7 +22,7 @@ func GetTrackDurationGivenBPM(currentBPM float64, measureScale float64) float64 
 	return getBaseTrackDuration(currentBPM) * measureScale
 }
 
-// Gets the full length of the track. Different from GetTrackDurationGivenBPM, as this accounts for ALL BPM changes' offsets put together.
+// GetTotalTrackDuration gets the full length of the track. Different from GetTrackDurationGivenBPM, as this accounts for ALL BPM changes' offsets put together.
 func GetTotalTrackDuration(initialBPM float64, data LocalTrackData) float64 {
 	baseLength := 0.0
 

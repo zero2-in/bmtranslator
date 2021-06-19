@@ -17,7 +17,7 @@ var (
 	player2LnRegex   = regexp.MustCompile("[6][1-9]")
 )
 
-// Converts from BMS to a ConvertedFile. Returns a ConvertedFile, whether file was skipped or not, and an error if it errored.
+// ReadFileData converts from BMS to a ConvertedFile. Returns a ConvertedFile, whether file was skipped or not, and an error if it errored.
 func (conf *ProgramConfig) ReadFileData(inputPath string, bmsFileName string) (*FileData, error) {
 
 	// What time (ms) the current track will start at.

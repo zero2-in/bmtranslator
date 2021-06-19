@@ -8,21 +8,37 @@ import (
 	"strings"
 )
 
-func RecursiveZip(pathToZip, destinationPath string) error {
+func RecursiveMultiPathZip(path1, path2, destinationPath string) error {
 	destinationFile, err := os.Create(destinationPath)
 	if err != nil {
 		return err
 	}
 	myZip := zip.NewWriter(destinationFile)
-	err = filepath.Walk(pathToZip, func(filePath string, info os.FileInfo, err error) error {
-		if info.IsDir() {
+	err = walkPath(path1, myZip)
+	if err != nil {
+		return err
+	}
+	err = walkPath(path2, myZip)
+	if err != nil {
+		return err
+	}
+	err = myZip.Close()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func walkPath(path string, z *zip.Writer) error {
+	return filepath.Walk(path, func(filePath string, info os.FileInfo, err error) error {
+		if info == nil || info.IsDir() {
 			return nil
 		}
 		if err != nil {
 			return err
 		}
-		relPath := strings.TrimPrefix(filepath.FromSlash(filePath), filepath.FromSlash(pathToZip)+string(os.PathSeparator))
-		zipFile, err := myZip.Create(relPath)
+		relPath := strings.TrimPrefix(filepath.FromSlash(filePath), filepath.FromSlash(path)+string(os.PathSeparator))
+		zipFile, err := z.Create(relPath)
 		if err != nil {
 			return err
 		}
@@ -37,12 +53,4 @@ func RecursiveZip(pathToZip, destinationPath string) error {
 		}
 		return nil
 	})
-	if err != nil {
-		return err
-	}
-	err = myZip.Close()
-	if err != nil {
-		return err
-	}
-	return nil
 }
