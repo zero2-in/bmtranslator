@@ -14,7 +14,7 @@ const (
 )
 
 // ConvertBmsToOsu converts a BMS file to .osu (for the game osu!).
-func (conf *ProgramConfig) ConvertBmsToOsu(fileData FileData, outputPath string) error {
+func (conf *ProgramConfig) ConvertBmsToOsu(fileData BMSFileData, outputPath string) error {
 	osuFile, e := os.Create(outputPath)
 	if e != nil {
 		return e
@@ -43,7 +43,7 @@ func (conf *ProgramConfig) ConvertBmsToOsu(fileData FileData, outputPath string)
 	_ = WriteLine(osuFile, fmt.Sprintf("Artist:%s", fileData.Metadata.Artist))
 	_ = WriteLine(osuFile, fmt.Sprintf("TitleUnicode:%s", fileData.Metadata.Title))
 	_ = WriteLine(osuFile, fmt.Sprintf("ArtistUnicode:%s", fileData.Metadata.Artist))
-	_ = WriteLine(osuFile, fmt.Sprintf("Creator:%s", AppendSubartistsToArtist(fileData.Metadata.Artist, fileData.Metadata.Subartists)))
+	_ = WriteLine(osuFile, fmt.Sprintf("Creator:%s", AppendSubArtistsToArtist(fileData.Metadata.Artist, fileData.Metadata.SubArtists)))
 	_ = WriteLine(osuFile, "Source:BMS")
 	_ = WriteLine(osuFile, fmt.Sprintf("Tags:%s", fileData.Metadata.Tags))
 	_ = WriteLine(osuFile, fmt.Sprintf("Version:%s", GetDifficultyName(fileData.Metadata.Difficulty, fileData.Metadata.Subtitle, conf.NoScratchLane)))
@@ -72,10 +72,10 @@ func (conf *ProgramConfig) ConvertBmsToOsu(fileData FileData, outputPath string)
 	}
 
 	if !conf.NoStoryboard {
-		for i, bga := range fileData.BackgroundAnimation {
+		for i, bga := range fileData.BGAFrames {
 			endTime := 0.0
-			if i+1 != len(fileData.BackgroundAnimation) {
-				endTime = fileData.BackgroundAnimation[i+1].StartTime
+			if i+1 != len(fileData.BGAFrames) {
+				endTime = fileData.BGAFrames[i+1].StartTime
 			}
 			vExt := path.Ext(bga.File)
 			layer := "Background"
@@ -93,7 +93,7 @@ func (conf *ProgramConfig) ConvertBmsToOsu(fileData FileData, outputPath string)
 	}
 
 	for _, sfx := range fileData.SoundEffects {
-		_ = WriteLine(osuFile, fmt.Sprintf("Sample,%d,%d,\"%s\",%d", int(sfx.StartTime), 0, fileData.SoundStringArray[sfx.Sample-1], conf.Volume))
+		_ = WriteLine(osuFile, fmt.Sprintf("Sample,%d,%d,\"%s\",%d", int(sfx.StartTime), 0, fileData.Audio.StringArray[sfx.Sample-1], conf.Volume))
 	}
 
 	_ = WriteLine(osuFile, "[TimingPoints]")
@@ -155,7 +155,7 @@ func (conf *ProgramConfig) ConvertBmsToOsu(fileData FileData, outputPath string)
 
 			var hitSound string
 			if obj.KeySounds != nil {
-				hitSound = fileData.SoundStringArray[obj.KeySounds.Sample-1]
+				hitSound = fileData.Audio.StringArray[obj.KeySounds.Sample-1]
 			}
 			if objType == 1<<7 && int(obj.EndTime) > int(obj.StartTime) {
 				_ = WriteLine(osuFile, fmt.Sprintf("%d,%d,%d,%d,%d,%d:0:0:0:0:%s",

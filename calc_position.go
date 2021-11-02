@@ -1,12 +1,16 @@
 package main
 
 // CalculateTimingPoints aggregates all timing points for this section of the track.
+// It will consider STOP directives by adding two timing points, starting with 0.0 and ending with the BPM
+// the STOP directive entered on.
+// Note to self: Consider what happens when BPM changes in the duration of a STOP. iirc this isn't actually
+// possible or something (it doesn't happen regularly in BMS maps).
 func CalculateTimingPoints(currentTime float64, startTrackWithBPM float64, data LocalTrackData) map[float64]float64 {
 	// Create local points (k: time, v: bpm)
 	points := map[float64]float64{}
 
 	if len(data.BPMChanges) > 0 {
-		timeElapsed := 0.0
+		var timeElapsed float64
 
 		for i, tc := range data.BPMChanges {
 			if i == 0 {
@@ -28,10 +32,10 @@ func CalculateTimingPoints(currentTime float64, startTrackWithBPM float64, data 
 
 	// scuffed
 	if len(data.Stops) > 0 {
-		timeElapsed := 0.0
+		var timeElapsed float64
 		for stopIndex, stop := range data.Stops {
 			if len(data.BPMChanges) > 0 {
-				localTimeElapsed := 0.0
+				var localTimeElapsed float64
 				stopTime := GetStopOffset(startTrackWithBPM, stop.Position, data)
 				// Search BPM changes and find out if a STOP is located within the range of any.
 				for i, bpmChange := range data.BPMChanges {
@@ -77,6 +81,8 @@ func CalculateTimingPoints(currentTime float64, startTrackWithBPM float64, data 
 	return points
 }
 
+// GetOffsetFromStartingTime gets the amount of time, in milliseconds, to add to the starting time of the current track
+// for the index given (for notes exclusively).
 func GetOffsetFromStartingTime(data *LocalTrackData, index int, message string, startTrackWithBPM float64) float64 {
 	// Essentially beat snap
 	measure := float64(len(message) / 2)

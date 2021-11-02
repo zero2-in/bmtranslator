@@ -25,7 +25,7 @@ func GetStopOffset(initialBPM float64, pos float64, data LocalTrackData) float64
 	return totalOffset
 }
 
-// Depending on where the index lies, calculate how much time to add
+// GetBPMChangeOffset calculates how much time to add
 // based on the BPM changes given for the track.
 func GetBPMChangeOffset(currentIndex int, data LocalTrackData) float64 {
 	if len(data.BPMChanges) == 0 {

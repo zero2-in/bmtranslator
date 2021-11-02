@@ -14,7 +14,9 @@ var (
 	titleRegex = regexp.MustCompile("\\(([^)]*)\\)|-([^-]*)-|\\[([^]]*)]|'([^']*)'|\"([^\"]*)\"|~([^~]*)~")
 )
 
-func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName string) (*FileData, error) {
+// CompileBMSToStruct converts a BMS file into a struct (BMSFileData) which can then be interpreted by the rest
+// of the program. It does not do any position calculation, only makes the data readable.
+func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName string) (*BMSFileData, error) {
 	file, err := os.Open(path.Join(inputPath, bmsFileName))
 	if err != nil {
 		return nil, err
@@ -25,19 +27,26 @@ func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName stri
 	buf := make([]byte, 0, 64*1024)
 	scanner.Buffer(buf, 1024*1024)
 
-	fileData := &FileData{
+	fileData := &BMSFileData{
 		Metadata: BMSMetadata{
 			Title:      "No title",
 			Artist:     "Unknown artist",
-			Difficulty: "?",
+			Difficulty: "Unnamed Difficulty",
 		},
-		TrackLines:     map[int][]Line{},
-		HitObjects:     map[int][]HitObject{},
-		BPMChangeIndex: map[string]float64{},
-		StopIndex:      map[string]float64{},
-		BGAIndex:       map[string]string{},
-		TimingPoints:   map[float64]float64{},
-		StartingBPM:    130.0,
+		TrackLines: map[int][]Line{},
+		HitObjects: map[int][]HitObject{},
+		Indices: IndexData{
+			BPMChanges: map[string]float64{},
+			Stops:      map[string]float64{},
+			BGA:        map[string]string{},
+		},
+		Audio: AudioData{
+			StringArray:      make([]string, 0),
+			HexadecimalArray: make([]string, 0),
+		},
+		SoundEffects: make([]SoundEffect, 0),
+		TimingPoints: map[float64]float64{},
+		StartingBPM:  DefaultStartingBPM,
 	}
 
 	// Should be true if the value of #IF n is anything other than 2. Resets at the #END(IF) mark.
@@ -147,7 +156,7 @@ func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName stri
 						color.HiYellow("* #subartist couldn't be converted via ShiftJIS (Line: %d)", lineIndex)
 					}
 				}
-				fileData.Metadata.Subartists = append(fileData.Metadata.Subartists, strings.Replace(b, "'", "\\'", -1))
+				fileData.Metadata.SubArtists = append(fileData.Metadata.SubArtists, strings.Replace(b, "'", "\\'", -1))
 			} else if strings.HasPrefix(lineLower, "#title") {
 				if len(line) < 8 {
 					if conf.Verbose {
@@ -176,7 +185,7 @@ func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName stri
 					}
 					return nil, nil
 				}
-				fileData.LnObject = lineLower[7:]
+				fileData.LNObject = lineLower[7:]
 			} else if strings.HasPrefix(lineLower, "#artist") {
 				if len(line) < 9 {
 					if conf.Verbose {
@@ -251,7 +260,7 @@ func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName stri
 					color.HiYellow("* BPM change is not a number. will be ignored (Line: %d)", lineIndex)
 					continue
 				}
-				fileData.BPMChangeIndex[lineLower[4:6]] = i
+				fileData.Indices.BPMChanges[lineLower[4:6]] = i
 			} else if strings.HasPrefix(lineLower, "#bmp") {
 				if len(line) < 8 {
 					color.HiYellow("* BMP invalid, ignoring (Line: %d)", lineIndex)
@@ -262,7 +271,7 @@ func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName stri
 					color.HiYellow("* \"%s\" wasn't found; ignoring (Line: %d)", line[7:], lineIndex)
 					continue
 				}
-				fileData.BGAIndex[lineLower[4:6]] = line[7:]
+				fileData.Indices.BGA[lineLower[4:6]] = line[7:]
 			} else if strings.HasPrefix(lineLower, "#stop") {
 				if len(line) < 9 {
 					color.HiYellow("* STOP isn't correctly formatted, not going to use it (Line: %d)", lineIndex)
@@ -277,7 +286,7 @@ func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName stri
 					color.HiYellow("* STOP is negative (< 0.0), not going to use it (Line: %d)", lineIndex)
 					continue
 				}
-				fileData.StopIndex[lineLower[5:7]] = i
+				fileData.Indices.Stops[lineLower[5:7]] = i
 			} else if strings.HasPrefix(lineLower, "#wav") {
 				if len(line) < 8 {
 					color.HiYellow("* WAV command invalid, all notes/sfx associated with it won't be placed (Line: %d)", lineIndex)
@@ -287,13 +296,14 @@ func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName stri
 				// Correct the extension used. E.g. if it's #WAV FILE.mp3 but actually FILE.wav, this will fix that.
 				// Most BMS players ignore the extension. However, I am not entirely sure if Quaver/osu also behave the same.
 				// Just to be safe and to future-proof, we search the filesystem for the right file.
+				// TODO: I think that this puts unnecessary strain on the filesystem. I'll look into a better way someday.
 				soundEffect := SearchForSoundFile(inputPath, line[7:])
 				if len(soundEffect) == 0 {
 					color.HiYellow("* (#WAV) \"%s\" wasn't found or isn't either .wav, .mp3, .ogg, or .3gp. ignoring (Line: %d)", line[7:], lineIndex)
 					continue
 				}
-				fileData.SoundStringArray = append(fileData.SoundStringArray, soundEffect)
-				fileData.SoundHexArray = append(fileData.SoundHexArray, lineLower[4:6])
+				fileData.Audio.StringArray = append(fileData.Audio.StringArray, soundEffect)
+				fileData.Audio.HexadecimalArray = append(fileData.Audio.HexadecimalArray, lineLower[4:6])
 			}
 			continue
 		}
@@ -305,6 +315,7 @@ func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName stri
 		}
 		channel := lineLower[4:6]
 
+		// TODO: remove this; we just ignore mines now lmao
 		//if len(mineRegex.FindString(channel)) > 0 {
 		//	color.HiYellow("* Cannot parse maps with mines/fakes due to often being coupled with per-column SV, which neither quaver or osu support (Line: %d)", lineIndex)
 		//	return nil, nil

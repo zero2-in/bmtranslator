@@ -219,7 +219,7 @@ func main() {
 			}
 
 			if conf.FileType == Osu && conf.Verbose {
-				color.HiBlack("* osu! specific: found %d background animation frames", len(fileData.BackgroundAnimation))
+				color.HiBlack("* osu! specific: found %d background animation frames", len(fileData.BGAFrames))
 			}
 
 			if conf.JSONOutput || conf.JSONOnly {

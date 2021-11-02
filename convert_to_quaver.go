@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-func (conf *ProgramConfig) ConvertBmsToQua(fileData FileData, outputPath string) error {
+func (conf *ProgramConfig) ConvertBmsToQua(fileData BMSFileData, outputPath string) error {
 	quaFile, e := os.Create(outputPath)
 	if e != nil {
 		return e
@@ -32,18 +32,18 @@ func (conf *ProgramConfig) ConvertBmsToQua(fileData FileData, outputPath string)
 	if conf.NoScratchLane {
 		scratchKey = "False"
 	}
-	_ = WriteLine(quaFile, fmt.Sprintf("HasScratchKey:%s", scratchKey))
+	_ = WriteLine(quaFile, fmt.Sprintf("HasScratchKey: %s", scratchKey))
 	_ = WriteLine(quaFile, fmt.Sprintf("Title: '%s'", fileData.Metadata.Title))
 	_ = WriteLine(quaFile, fmt.Sprintf("Artist: '%s'", fileData.Metadata.Artist))
 	_ = WriteLine(quaFile, "Source: BMS")
 	_ = WriteLine(quaFile, fmt.Sprintf("Tags: '%s'", fileData.Metadata.Tags))
-	_ = WriteLine(quaFile, fmt.Sprintf("Creator: '%s'", AppendSubartistsToArtist(fileData.Metadata.Artist, fileData.Metadata.Subartists)))
+	_ = WriteLine(quaFile, fmt.Sprintf("Creator: '%s'", AppendSubArtistsToArtist(fileData.Metadata.Artist, fileData.Metadata.SubArtists)))
 	_ = WriteLine(quaFile, fmt.Sprintf("DifficultyName: '%s'", GetDifficultyName(fileData.Metadata.Difficulty, fileData.Metadata.Subtitle, conf.NoScratchLane)))
 	_ = WriteLine(quaFile, "Description: Converted from BMS")
 	_ = WriteLine(quaFile, "EditorLayers: []")
 	// Process Hit Sound Paths
 	_ = WriteLine(quaFile, "CustomAudioSamples:")
-	for _, m := range fileData.SoundStringArray {
+	for _, m := range fileData.Audio.StringArray {
 		_ = WriteLine(quaFile, "- Path: "+m)
 	}
 	// Process Sound Effects

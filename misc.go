@@ -27,7 +27,7 @@ func GetDifficultyName(i string, sub string, autoScratch bool) string {
 	return sub + " " + b
 }
 
-func AppendSubartistsToArtist(a string, subartists []string) string {
+func AppendSubArtistsToArtist(a string, subartists []string) string {
 	if len(subartists) == 0 {
 		return a
 	}
@@ -39,6 +39,7 @@ func WriteLine(f *os.File, s string) error {
 	return e
 }
 
+// GetCorrespondingHitSound gets a hexadecimal value's hit sound as a sample index for future reference.
 func (conf *ProgramConfig) GetCorrespondingHitSound(hitSoundHexArray []string, target string) *KeySound {
 	for ind, v := range hitSoundHexArray {
 		if v == target {

@@ -22,11 +22,12 @@ type TimingPoint struct {
 }
 
 // ConvertBmsToJson outputs BMS information to a json file. Some information (like hex value mapping) is omitted.
-func (conf *ProgramConfig) ConvertBmsToJson(fileData FileData, outputPath string) error {
+func (conf *ProgramConfig) ConvertBmsToJson(fileData BMSFileData, outputPath string) error {
 	dest, e := os.Create(outputPath)
 	if e != nil {
 		return e
 	}
+
 	defer dest.Close()
 
 	d := &JSONFileData{
@@ -49,13 +50,20 @@ func (conf *ProgramConfig) ConvertBmsToJson(fileData FileData, outputPath string
 			Bpm:       t,
 		})
 	}
-	for _, s := range fileData.SoundStringArray {
+	for _, s := range fileData.Audio.StringArray {
 		d.SampleIndex = append(d.SampleIndex, s)
 	}
 
 	for _, s := range fileData.SoundEffects {
 		d.SoundEffects = append(d.SoundEffects, s)
 	}
+
+	// Avoid null conflict
+	//for i, h := range d.HitObjects {
+	//	if len(h) == 0 {
+	//		d.HitObjects[i] = make([]HitObject, 0)
+	//	}
+	//}
 
 	j, e := json.Marshal(d)
 	if e != nil {

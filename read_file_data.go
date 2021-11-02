@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	//ignore mines....for now.
+	// ignore mines....for now.
 	// Quaver might implement this in the future
 	//mineRegex        = regexp.MustCompile("[d][1-9]")
 	noteRegex        = regexp.MustCompile("[1][1-9]")
@@ -18,10 +18,10 @@ var (
 )
 
 // ReadFileData converts from BMS to a ConvertedFile. Returns a ConvertedFile, whether file was skipped or not, and an error if it errored.
-func (conf *ProgramConfig) ReadFileData(inputPath string, bmsFileName string) (*FileData, error) {
+func (conf *ProgramConfig) ReadFileData(inputPath string, bmsFileName string) (*BMSFileData, error) {
 
 	// What time (ms) the current track will start at.
-	startTrackAt := 0.0
+	var startTrackAt float64
 
 	// What BPM the current track will start at.
 	var startTrackWithBPM float64
@@ -50,7 +50,7 @@ func (conf *ProgramConfig) ReadFileData(inputPath string, bmsFileName string) (*
 	sort.Ints(keys)
 
 	for _, trackInt := range keys {
-		localTrackData, e := conf.ReadTrackData(trackInt, fileData.TrackLines[trackInt], fileData.BPMChangeIndex, fileData.StopIndex)
+		localTrackData, e := conf.ReadTrackData(trackInt, fileData.TrackLines[trackInt], fileData.Indices.BPMChanges, fileData.Indices.Stops)
 		if e != nil {
 			return nil, e
 		}
@@ -82,7 +82,7 @@ func (conf *ProgramConfig) ReadFileData(inputPath string, bmsFileName string) (*
 					continue
 				}
 				localOffset := GetOffsetFromStartingTime(localTrackData, i, line.Message, startTrackWithBPM)
-				sfx := conf.GetCorrespondingHitSound(fileData.SoundHexArray, target)
+				sfx := conf.GetCorrespondingHitSound(fileData.Audio.HexadecimalArray, target)
 				laneInt := strings.Index(Base36Range, line.Channel[1:])
 				// maybe you should get among some bitches
 				if noteRegex.MatchString(line.Channel) || lnRegex.MatchString(line.Channel) {
@@ -104,7 +104,7 @@ func (conf *ProgramConfig) ReadFileData(inputPath string, bmsFileName string) (*
 						}
 
 						// Closes the long note
-						if target == fileData.LnObject {
+						if target == fileData.LNObject {
 							if len(fileData.HitObjects[laneInt]) == 0 {
 								// Why is there an LN tail as the first object??
 								continue
@@ -169,19 +169,19 @@ func (conf *ProgramConfig) ReadFileData(inputPath string, bmsFileName string) (*
 						soundEffect.Sample = sfx.Sample
 						soundEffect.Volume = sfx.Volume
 					} else {
-						// No sound effect assigned to this address?
+						// No sound effect corresponding to this address?
 						continue
 					}
 					fileData.SoundEffects = append(fileData.SoundEffects, soundEffect)
 				}
 				if (line.Channel == "04" || line.Channel == "07") && conf.FileType == Osu && !conf.NoStoryboard {
-					t := fileData.BGAIndex[target]
+					t := fileData.Indices.BGA[target]
 					l := Back
 					if line.Channel == "07" {
 						l = Front
 					}
 					if len(t) > 0 {
-						fileData.BackgroundAnimation = append(fileData.BackgroundAnimation, BackgroundAnimation{
+						fileData.BGAFrames = append(fileData.BGAFrames, BGAFrame{
 							StartTime: startTrackAt + localOffset,
 							File:      t,
 							Layer:     l,
@@ -212,8 +212,8 @@ func (conf *ProgramConfig) ReadFileData(inputPath string, bmsFileName string) (*
 		}
 	}
 
-	sort.Slice(fileData.BackgroundAnimation, func(i, j int) bool {
-		return fileData.BackgroundAnimation[i].StartTime < fileData.BackgroundAnimation[j].StartTime
+	sort.Slice(fileData.BGAFrames, func(i, j int) bool {
+		return fileData.BGAFrames[i].StartTime < fileData.BGAFrames[j].StartTime
 	})
 
 	return fileData, nil
