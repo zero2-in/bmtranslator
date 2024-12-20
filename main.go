@@ -72,14 +72,12 @@ func main() {
 	_, err := os.Stat(path.Join(filepath.FromSlash(conf.Output), TempDir))
 	if err != nil {
 		if os.IsNotExist(err) {
-			if !strings.Contains(err.Error(), "The system cannot find the file specified.") {
-				color.HiRed("* Failed to check for existence of the temporary directory. error: %s", err.Error())
-				return
-			} else {
-				if conf.Verbose {
-					color.HiBlack("* Temporary directory does not exist yet.")
-				}
+			if conf.Verbose {
+				color.HiBlack("* Temporary directory does not exist yet.")
 			}
+		} else {
+			color.HiRed("* Failed to check for existence of the temporary directory. error: %s", err.Error())
+			return
 		}
 	} else {
 		if conf.Verbose {
