@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/fatih/color"
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/fatih/color"
 )
 
 var (
@@ -42,14 +43,19 @@ func (conf *ProgramConfig) ReadFileData(inputPath string, bmsFileName string) (*
 
 	fileData.TimingPoints[0.0] = fileData.StartingBPM
 
-	// Sort all tracks in ascending order
-	keys := make([]int, 0)
+	// Sort all tracks in ascending order, then iterate through every measure (including empty ones)
+	keys := make([]int, 0, len(fileData.TrackLines))
 	for k := range fileData.TrackLines {
 		keys = append(keys, k)
 	}
 	sort.Ints(keys)
 
-	for _, trackInt := range keys {
+	// Determine the minimum and maximum measure numbers for continuous iteration
+	minMeasure := keys[0]
+	maxMeasure := keys[len(keys)-1]
+
+	for trackInt := minMeasure; trackInt <= maxMeasure; trackInt++ {
+		// `trackInt` refers to the current measure (for empty measures, fileData.TrackLines[trackInt] is nil or an empty slice)
 		localTrackData, e := conf.ReadTrackData(trackInt, fileData.TrackLines[trackInt], fileData.Indices.BPMChanges, fileData.Indices.Stops)
 		if e != nil {
 			return nil, e
