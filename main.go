@@ -3,13 +3,14 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/fatih/color"
 	"io/ioutil"
 	"log"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/fatih/color"
 )
 
 func welcomeToOss() {
@@ -159,7 +160,9 @@ func main() {
 			if f.Size() == 0 || f.IsDir() {
 				continue
 			}
-			if strings.HasSuffix(f.Name(), ".bms") || strings.HasSuffix(f.Name(), ".bml") || strings.HasSuffix(f.Name(), ".bme") {
+			// include .BME, .Bme, .bMe, .bmE ...
+			lower := strings.ToLower(f.Name())
+			if strings.HasSuffix(lower, ".bms") || strings.HasSuffix(lower, ".bml") || strings.HasSuffix(lower, ".bme") {
 				bmsChartFiles = append(bmsChartFiles, f.Name())
 			}
 		}

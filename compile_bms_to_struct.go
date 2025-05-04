@@ -2,12 +2,13 @@ package main
 
 import (
 	"bufio"
-	"github.com/fatih/color"
 	"os"
 	"path"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/fatih/color"
 )
 
 var (
@@ -126,7 +127,7 @@ func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName stri
 						color.HiYellow("* #genre couldn't be converted via ShiftJIS (Line: %d)", lineIndex)
 					}
 				}
-				fileData.Metadata.Tags = strings.Replace(b, "'", "\\'", -1)
+				fileData.Metadata.Tags = b
 			} else if strings.HasPrefix(lineLower, "#subtitle") {
 				if len(line) < 11 {
 					if conf.Verbose {
@@ -141,7 +142,7 @@ func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName stri
 						color.HiYellow("* #subtitle couldn't be converted via ShiftJIS (Line: %d)", lineIndex)
 					}
 				}
-				fileData.Metadata.Subtitle = strings.Replace(b, "'", "\\'", -1)
+				fileData.Metadata.Subtitle = b
 			} else if strings.HasPrefix(lineLower, "#subartist") {
 				if len(line) < 12 {
 					if conf.Verbose {
@@ -156,7 +157,7 @@ func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName stri
 						color.HiYellow("* #subartist couldn't be converted via ShiftJIS (Line: %d)", lineIndex)
 					}
 				}
-				fileData.Metadata.SubArtists = append(fileData.Metadata.SubArtists, strings.Replace(b, "'", "\\'", -1))
+				fileData.Metadata.SubArtists = append(fileData.Metadata.SubArtists, b)
 			} else if strings.HasPrefix(lineLower, "#title") {
 				if len(line) < 8 {
 					if conf.Verbose {
@@ -171,7 +172,7 @@ func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName stri
 						color.HiYellow("* #title couldn't be converted via ShiftJIS (Line: %d)", lineIndex)
 					}
 				}
-				fileData.Metadata.Title = strings.Replace(b, "'", "\\'", -1)
+				fileData.Metadata.Title = b
 			} else if strings.HasPrefix(lineLower, "#lnobj") {
 				if len(line) < 8 {
 					if conf.Verbose {
@@ -200,7 +201,7 @@ func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName stri
 						color.HiYellow("* #artist couldn't be converted via ShiftJIS (Line: %d)", lineIndex)
 					}
 				}
-				fileData.Metadata.Artist = strings.Replace(b, "'", "\\'", -1)
+				fileData.Metadata.Artist = b
 			} else if strings.HasPrefix(lineLower, "#playlevel") {
 				if len(line) < 12 {
 					if conf.Verbose {
