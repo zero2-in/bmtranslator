@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -217,11 +218,27 @@ func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName stri
 					}
 					continue
 				}
-				exists := FileExists(path.Join(inputPath, line[11:]))
-				if !exists {
-					color.HiYellow("* \"%s\" (#stagefile) wasn't found; ignoring (Line: %d)", line[7:], lineIndex)
+				requested := line[11:]
+				chosen := requested
+
+				if !FileExists(path.Join(inputPath, requested)) {
+					base := strings.TrimSuffix(requested, filepath.Ext(requested))
+					for _, ext := range []string{".png", ".jpg", ".jpeg", ".bmp", ".gif"} {
+						alt := base + ext
+						if FileExists(path.Join(inputPath, alt)) {
+							chosen = alt
+							if conf.Verbose {
+								color.HiYellow("* using \"%s\" for #stagefile instead of \"%s\" (Line: %d)", alt, requested, lineIndex)
+							}
+							break
+						}
+					}
+					if chosen == requested {
+						color.HiYellow("* \"%s\" (#stagefile) wasn't found; ignoring (Line: %d)", requested, lineIndex)
+						continue
+					}
 				}
-				fileData.Metadata.StageFile = line[11:]
+				fileData.Metadata.StageFile = chosen
 			} else if strings.HasPrefix(lineLower, "#banner") {
 				if len(line) < 9 {
 					if conf.Verbose {
@@ -298,9 +315,22 @@ func (conf *ProgramConfig) CompileBMSToStruct(inputPath string, bmsFileName stri
 				// Most BMS players ignore the extension. However, I am not entirely sure if Quaver/osu also behave the same.
 				// Just to be safe and to future-proof, we search the filesystem for the right file.
 				// TODO: I think that this puts unnecessary strain on the filesystem. I'll look into a better way someday.
-				soundEffect := SearchForSoundFile(inputPath, line[7:])
+				//soundEffect := SearchForSoundFile(inputPath, line[7:]) OLD
+
+				// Decode the filename bytes from Shift-JIS → UTF-8
+				rawNameBytes := []byte(line[7:])
+				decodedName, err := BytesFromShiftJIS(rawNameBytes)
+				if err != nil {
+					if conf.Verbose {
+						color.HiYellow("* #wav filename decoding failed (Line: %d)", lineIndex)
+					}
+					continue
+				}
+				// Now look for that decoded name with any supported extension
+				soundEffect := SearchForSoundFile(inputPath, decodedName) // NEW
+
 				if len(soundEffect) == 0 {
-					color.HiYellow("* (#WAV) \"%s\" wasn't found or isn't either .wav, .mp3, .ogg, or .3gp. ignoring (Line: %d)", line[7:], lineIndex)
+					color.HiYellow("* (#WAV) \"%s\" wasn't found or isn't .wav/.mp3/.ogg/.3gp. ignoring (Line: %d)", decodedName, lineIndex)
 					continue
 				}
 				fileData.Audio.StringArray = append(fileData.Audio.StringArray, soundEffect)

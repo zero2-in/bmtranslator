@@ -16,7 +16,7 @@ const (
 	TempDir = "bmt_temp_folder"
 
 	// Version is the current version of the program.
-	Version = "0.2.2"
+	Version = "0.2.3b"
 
 	// JSONVersion is the current version of the JSON output of the program.
 	// Also included in JSON files as a "version" key.
