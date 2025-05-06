@@ -24,6 +24,7 @@ type ProgramConfig struct {
 	NoTimingPoints    bool
 	NoScratchLane     bool
 	JSONOnly          bool
+	NoZip             bool
 	//SpecialAlignment  bool
 }
 
@@ -42,6 +43,7 @@ func NewProgramConfig() *ProgramConfig {
 	noTimingPoints := flag.Bool("no-timing-points", false, "If this is specified then BPM changes will not exist. Helpful for maps whose bpm changes don't load correctly (This is equivalent to no SV)")
 	jsonOutput := flag.Bool("json", false, " If this is specified, file data will be output to a json file, which is put into the output folder.")
 	jsonOnly := flag.Bool("json-only", false, "When specified, no zips will be created, only .json files.")
+	noZip := flag.Bool("no-zip", false, "Skip creating .qp, .osz archive; leave output as folder")
 
 	// TODO: Implement 5K+1 alignment feature someday
 	//specialAlignment := flag.String("5k-alignment", "right", "If the style is 5K+1, where should the notes be aligned to? (left for 1-5, right for 3-7. Default is right.)")
@@ -66,5 +68,6 @@ func NewProgramConfig() *ProgramConfig {
 		NoTimingPoints:    *noTimingPoints,
 		NoScratchLane:     *noScratch,
 		JSONOnly:          *jsonOnly,
+		NoZip:             *noZip,
 	}
 }

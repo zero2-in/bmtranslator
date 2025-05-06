@@ -108,11 +108,13 @@ func main() {
 		color.HiBlack("* Found %d directories to process.", len(inputFolders))
 	}
 
-	// Create temporary directory
-	err = os.Mkdir(path.Join(filepath.FromSlash(conf.Output), TempDir), 0700)
-	if err != nil {
-		color.HiRed("* Could not create a temporary folder inside the output directory. %s", err.Error())
-		return
+	// Only create TempDir when zipping is enabled
+	if !conf.NoZip {
+		err = os.Mkdir(path.Join(filepath.FromSlash(conf.Output), TempDir), 0700)
+		if err != nil {
+			color.HiRed("* Could not create a temporary folder inside the output directory. %s", err.Error())
+			return
+		}
 	}
 
 	// Store statuses
@@ -129,7 +131,14 @@ func main() {
 			continue
 		}
 		input := filepath.ToSlash(path.Join(filepath.FromSlash(conf.Input), f.Name()))
-		output := filepath.ToSlash(path.Join(filepath.FromSlash(conf.Output), TempDir, f.Name()))
+		//output := filepath.ToSlash(path.Join(filepath.FromSlash(conf.Output), TempDir, f.Name()))
+		// choose output path based on -no-zip
+		output := func() string {
+			if conf.NoZip {
+				return filepath.ToSlash(path.Join(filepath.FromSlash(conf.Output), f.Name()))
+			}
+			return filepath.ToSlash(path.Join(filepath.FromSlash(conf.Output), TempDir, f.Name()))
+		}()
 
 		var bmsChartFiles []string
 		files, err := ioutil.ReadDir(input)
@@ -250,9 +259,14 @@ func main() {
 			conversionStatus[fI].Success++
 		}
 
-		if !conf.JSONOnly {
+		if !conf.JSONOnly && !conf.NoZip {
 			if err := RecursiveMultiPathZip(input, output, path.Join(conf.Output, f.Name()+"."+zipExtension)); err != nil {
 				panic(err)
+			}
+		} else if conf.NoZip {
+			color.HiGreen("`-no-zip` Specified: Conversion output left uncompressed in %q", output)
+			if err := CopyPath(input, output); err != nil {
+				log.Printf("Warning: Failed to copy source files from %q to %q: %v", input, output, err)
 			}
 		}
 
@@ -270,12 +284,15 @@ func main() {
 		color.White("* %s: %d %s and %d %s", s.Name, s.Fail, color.YellowString("not converted"), s.Success, color.HiGreenString("succeeded"))
 	}
 
-	e := os.RemoveAll(path.Join(conf.Output, TempDir))
-	if e != nil {
-		color.HiRed("* Failed to remove temp dir. %s", e.Error())
-	} else {
-		if conf.Verbose {
-			color.HiBlack("* Cleaned up temp dir successfully.")
+	// only remove TempDir when zipping was used
+	if !conf.NoZip {
+		e := os.RemoveAll(path.Join(conf.Output, TempDir))
+		if e != nil {
+			color.HiRed("* Failed to remove temp dir. %s", e.Error())
+		} else {
+			if conf.Verbose {
+				color.HiBlack("* Cleaned up temp dir successfully.")
+			}
 		}
 	}
 }

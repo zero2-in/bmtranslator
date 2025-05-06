@@ -28,6 +28,7 @@ Get JSON info only: `bmt.exe -i /path/to/input -o /path/to/output -json-only` (s
 |  `-no-timing-points` | No | Yes | If this is specified, **no** timing points will be added to the output file. This means no SV changes and is useful for SV maps which don't convert correctly. | N/A |
 |  `-json` | No | Yes | In addition to the output, an accompanying .json file will be created for each chart, with information about the file (start times, metadata, etc). These will be placed in the same output folder. | N/A |
 |  `-json-only` | No | Yes | When specified, no zips will be created, only .json files. `-json` becomes irrelevant if you enable this. | N/A |
+|  `-no-zip` | No | Yes | When specified, no zips will be created. | N/A |
 
 ## Limitations
 
