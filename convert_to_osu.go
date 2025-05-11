@@ -154,26 +154,30 @@ func (conf *ProgramConfig) ConvertBmsToOsu(fileData BMSFileData, outputPath stri
 			}
 
 			var hitSound string
+			vol := 1
 			if obj.KeySounds != nil {
 				hitSound = fileData.Audio.StringArray[obj.KeySounds.Sample-1]
+				vol = 100
 			}
 			if objType == 1<<7 && int(obj.EndTime) > int(obj.StartTime) {
-				_ = WriteLine(osuFile, fmt.Sprintf("%d,%d,%d,%d,%d,%d:0:0:0:0:%s",
+				_ = WriteLine(osuFile, fmt.Sprintf("%d,%d,%d,%d,%d,%d:0:0:0:%d:%s",
 					int(math.Floor(xPos)),
 					OsuYPos,
 					int(obj.StartTime),
 					objType,
 					0,
 					int(obj.EndTime),
+					vol,
 					hitSound,
 				))
 			} else {
-				_ = WriteLine(osuFile, fmt.Sprintf("%d,%d,%d,%d,%d,0:0:0:0:%s",
+				_ = WriteLine(osuFile, fmt.Sprintf("%d,%d,%d,%d,%d,0:0:0:%d:%s",
 					int(math.Floor(xPos)),
 					OsuYPos,
 					int(obj.StartTime),
 					1<<0,
 					0,
+					vol,
 					hitSound,
 				))
 			}
